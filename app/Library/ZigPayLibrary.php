@@ -24,7 +24,7 @@ namespace App\library {
             $token = $this->generateToken();
             if (empty($token)) {
                 Apiresponse::insertGetId([
-                    'message' => 'ZigPay token generation failed',
+                    'message' => 'Token generation failed',
                     'api_type' => $this->api_id,
                     'report_id' => $insert_id,
                     'request_message' => $this->base_url . '/api/Auth/generate-token',

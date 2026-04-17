@@ -32,7 +32,7 @@
                             <tr>
                                 <td><code>amount</code></td>
                                 <td>numeric</td>
-                                <td>The order amount. Must be between the configured minimum and maximum limits for your ZigPay MID.</td>
+                                <td>The order amount. Must be between the configured minimum and maximum limits for your MID.</td>
                                 <td>Yes</td>
                             </tr>
                             <tr>
@@ -87,12 +87,12 @@
 <pre style="color:#dc3545;">Error Response :
 {
     "status": "failure",
-    "message": "Unable to generate ZigPay token"
+    "message": "Unable to generate token"
 }
 or
 {
     "status": "failure",
-    "message": "ZigPay MID minimum is Rs. XXX. Please enter Rs. XXX or above."
+    "message": " minimum is Rs. XXX. Please enter Rs. XXX or above."
 }</pre>
                     </div>
                 </div>
@@ -191,7 +191,7 @@ or
                                 <td><code>client_id</code></td>
                                 <td>string</td>
                                 <td>Yes</td>
-                                <td>Your original <code>client_id</code> or ZigPay reference that maps to the order.</td>
+                                <td>Your original <code>client_id</code> or reference that maps to the order.</td>
                             </tr>
                             <tr>
                                 <td><code>message</code></td>

@@ -125,7 +125,7 @@ class ZigPayController extends Controller
         $serviceStatus = $activeService['status_id'];
         if ($serviceStatus == 1) {
             return view('agent.add-money.zigpay')->with([
-                'page_title' => 'Payin 8 - ZigPay',
+                'page_title' => 'Payin 8',
                 'min_amount' => $this->min_amount,
                 'max_amount' => $this->max_amount,
             ]);
@@ -193,7 +193,7 @@ class ZigPayController extends Controller
 
         $token = $this->generateToken();
         if (empty($token)) {
-            return response()->json(['status' => 'failure', 'message' => 'Unable to generate ZigPay token']);
+            return response()->json(['status' => 'failure', 'message' => 'Unable to generate token']);
         }
 
         $ctime = now();
@@ -253,7 +253,7 @@ class ZigPayController extends Controller
             }
             return response()->json([
                 'status' => 'failure',
-                'message' => 'ZigPay MID minimum is Rs. ' . $detectedMin . '. Please enter Rs. ' . $detectedMin . ' or above.',
+                'message' => ' MID minimum is Rs. ' . $detectedMin . '. Please enter Rs. ' . $detectedMin . ' or above.',
             ]);
         }
 
@@ -542,7 +542,7 @@ class ZigPayController extends Controller
 
         $token = $this->generateToken();
         if (empty($token)) {
-            return response()->json(['status' => false, 'message' => 'Unable to generate ZigPay token']);
+            return response()->json(['status' => false, 'message' => 'Unable to generate token']);
         }
 
         $url = $this->base_url . '/api/v1/check/status';
@@ -566,7 +566,7 @@ class ZigPayController extends Controller
 
         $res = json_decode($response, true);
         if (!is_array($res)) {
-            return response()->json(['status' => false, 'message' => 'Invalid response from ZigPay']);
+            return response()->json(['status' => false, 'message' => 'Invalid response received.']);
         }
 
         return response()->json([

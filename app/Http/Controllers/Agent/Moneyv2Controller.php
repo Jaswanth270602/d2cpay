@@ -39,7 +39,7 @@ class Moneyv2Controller extends Controller
         $this->verification_provider_id = 315;
 
         $apis = Api::where('vender_id', $this->vendor_id)->first();
-        $this->api_id = $apis->id;
+        $this->api_id = $apis->id ?? 0;
     }
 
 

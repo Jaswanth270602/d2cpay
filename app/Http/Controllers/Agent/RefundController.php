@@ -327,9 +327,11 @@ class RefundController extends Controller
 
         $statusRaw = (string)($payload['status_id'] ?? $payload['status'] ?? $payload['api_status'] ?? $payload['transaction_status'] ?? '');
         $statusLower = strtolower(trim($statusRaw));
+        // ZigPay payout callback contract: 1=success, 2=pending, 3=failure.
+        // Map to internal statuses expected by refund library: 1=success, 2=failure, 3=pending.
         if (in_array($statusLower, ['1', 'success', 'processed', 'completed'], true)) {
             $statusId = 1;
-        } elseif (in_array($statusLower, ['2', 'failed', 'failure', 'rejected'], true)) {
+        } elseif (in_array($statusLower, ['3', 'failed', 'failure', 'rejected'], true)) {
             $statusId = 2;
         } else {
             $statusId = 3;
@@ -341,7 +343,11 @@ class RefundController extends Controller
         $reason = (string)($payload['message'] ?? $payload['responseMessage'] ?? '');
 
         $report = null;
-        if ($clientRef !== '' && ctype_digit($clientRef)) {
+        $reportIdRaw = (string)($payload['report_id'] ?? $payload['reportId'] ?? $payload['txn_id'] ?? $payload['transaction_id'] ?? '');
+        if ($reportIdRaw !== '' && ctype_digit($reportIdRaw)) {
+            $report = Report::find((int)$reportIdRaw);
+        }
+        if (!$report && $clientRef !== '' && ctype_digit($clientRef)) {
             $report = Report::find((int)$clientRef);
         }
         if (!$report && $clientRef !== '') {
@@ -349,6 +355,9 @@ class RefundController extends Controller
         }
         if (!$report && $clientRef !== '') {
             $report = Report::where('payid', $clientRef)->orderBy('id', 'DESC')->first();
+        }
+        if (!$report && preg_match('/^ZPO\d{6}(\d{8})$/', $clientRef, $matches)) {
+            $report = Report::find((int)$matches[1]);
         }
         if (!$report && preg_match('/(\d{1,10})$/', $clientRef, $matches)) {
             $report = Report::find((int)$matches[1]);

@@ -8,17 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Validator;
-use App\Gatewayorder;
-use App\Provider;
-use App\User;
-use App\Balance;
-use App\Report;
-use App\Sitesetting;
+use App\Models\Gatewayorder;
+use App\Models\Provider;
+use App\Models\User;
+use App\Models\Balance;
+use App\Models\Report;
+use App\Models\Sitesetting;
 use App\Library\SmsLibrary;
 use Helpers;
 use Str;
-use App\Apiresponse;
-use App\Cashfreegateway;
+use App\Models\Apiresponse;
+use App\Models\Cashfreegateway;
 use App\Library\GetcommissionLibrary;
 
 

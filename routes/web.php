@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [App\Http\Controllers\FrontController::class, 'welcome'])->name('home');
 Route::get('/pages/{company_id}/{slug}', [App\Http\Controllers\FrontController::class, 'dynamic_page'])->name('dynamic_page');
 Route::get('/contact-us', [App\Http\Controllers\FrontController::class, 'contact_us'])->name('contact_us');
-Auth::routes();
+Auth::routes(['register' => false, 'reset' => false, 'verify' => false, 'confirm' => false]);
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index']);
 Route::post('/save-contact-enquiry', [App\Http\Controllers\FrontController::class, 'save_contact_enquiry'])->name('save_contact_enquiry');
 // register here

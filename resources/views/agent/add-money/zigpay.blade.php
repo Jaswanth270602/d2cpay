@@ -134,8 +134,8 @@
 <div class="main-content-body d-flex justify-content-center align-items-center" style="min-height:100vh;">
     <div class="col-md-5 unique-form-wrapper" id="form-wrapper">
         <div class="unique-card">
-            <h3 class="unique-title">{{ $page_title ?? 'Add Money' }}</h3>
-            <p class="unique-sub">Generate a ZigPay UPI request by entering the amount</p>
+            <h3 class="unique-title">Payin 8</h3>
+            <p class="unique-sub">Generate a UPI request by entering the amount</p>
 
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <input type="hidden" id="mobile_number" value="{{ Auth::User()->mobile }}">
@@ -148,7 +148,7 @@
                 </ul>
             </div>
 
-            <button class="btn-neon mt-2" id="generateBtn" onclick="createOrder()" disabled>Generate ZigPay Link</button>
+            <button class="btn-neon mt-2" id="generateBtn" onclick="createOrder()" disabled>Generate Link</button>
             <button class="btn-ghost" type="button" onclick="window.history.back()">Close</button>
         </div>
     </div>

@@ -32,7 +32,7 @@ class BbpsV1Controller extends Controller
     {
         $this->vendor_id = 1;
         $apis = Api::where('vender_id', $this->vendor_id)->first();
-        $this->api_id = $apis->id;
+        $this->api_id = $apis->id ?? 0;
     }
 
 

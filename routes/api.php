@@ -150,10 +150,7 @@ Route::group(['prefix' => 'payout/v1'], function () {
     Route::post('/transfer-now', [App\Http\Controllers\Agent\DirectTransferController::class, 'transfer_now_api'])->middleware('auth:api');
 });
 
-Route::group(['prefix' => 'payout/zigpay/v1'], function () {
-    Route::post('/create-order', [App\Http\Controllers\Agent\ZigPayPayoutController::class, 'createOrderApi'])->middleware('auth:api');
-    Route::post('/status-check', [App\Http\Controllers\Agent\ZigPayPayoutController::class, 'statusCheckApi'])->middleware('auth:api');
-});
+
 
 Route::prefix('pancard')->group(function () {
     Route::post('/purchase-coupons', [App\Http\Controllers\Agent\PancardController::class, 'buy_coupons_app'])->middleware('auth:api');
@@ -195,7 +192,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/get-roles', [App\Http\Controllers\ApplicationController::class, 'get_roles'])->middleware('auth:api');
     Route::post('/add-members', [App\Http\Controllers\Admin\MemberController::class, 'store_members'])->middleware('auth:api');
     Route::post('/get-users', [App\Http\Controllers\ApplicationController::class, 'get_users'])->middleware('auth:api');
-    Route::post('/balance-transfer', [App\Http\Controllers\Admin\TrasnferController::class, 'balance_trasnfer_application'])->middleware('auth:api');
+    Route::post('/balance-transfer', [App\Http\Controllers\Admin\TransferController::class, 'balance_trasnfer_application'])->middleware('auth:api');
 });
 
 Route::prefix('aeps/v1')->group(function () {
