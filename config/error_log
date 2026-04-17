@@ -1,0 +1,4 @@
+[05-Dec-2025 05:47:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/r7q5p6bm505j/public_html/d2cpay.co/config/services.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/d2cpay.co/config/services.php on line 18

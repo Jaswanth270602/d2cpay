@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg viewBox="0 0 909 1286" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<style type="text/css"><![CDATA[
+.g0{
+fill: none;
+stroke: #000000;
+stroke-width: 0.87;
+stroke-linecap: square;
+stroke-linejoin: miter;
+}
+]]></style>
+</defs>
+<image preserveAspectRatio="none" x="39" y="43" width="217" height="87" xlink:href="img/1.png"/>
+<image preserveAspectRatio="none" x="736" y="13" width="121" height="121" xlink:href="img/2.jpg"/>
+<path d="M26,142.9H879.1v21.7H26V142.9Zm0,21.7H459.1V459.1H26V164.6Zm433.1,0H671.3v51.9H459.1V164.6Zm212.2,0H879.1v51.9H671.3V164.6ZM459.1,216.5H671.3v52H459.1v-52Zm212.2,0H879.1v52H671.3v-52Zm-212.2,52h420V459.1h-420V268.5ZM26,459.1H60.6v34.6H26V459.1Zm34.6,0h130v34.6H60.6V459.1Zm129.9,0h69.3v34.6H190.5V459.1Zm69.3,0h91v34.6h-91V459.1Zm91,0h77.9v34.6H350.8V459.1Zm77.9,0h104v34.6h-104V459.1Zm104,0h116v17.3h-116V459.1Zm116,0H764.8v17.3H648.7V459.1Zm116.1,0H878.7v17.3H764.8V459.1ZM532.7,476.4h81.4v17.3H532.7V476.4Zm81.4,0h34.6v17.3H614.1V476.4Zm34.6,0h81.5v17.3H648.7V476.4Zm81.5,0h34.6v17.3H730.2V476.4Zm34.6,0h78v17.3h-78V476.4Zm78,0h35.9v17.3H842.8V476.4ZM26,493.7H60.6v26H26v-26Zm34.6,0h130v26H60.6v-26Zm129.9,0h69.3v26H190.5v-26Zm69.3,0h91v26h-91v-26Zm91,0h77.9v26H350.8v-26Zm77.9,0h104v26h-104v-26Zm104,0h81.4v26H532.7v-26Zm81.4,0h34.6v26H614.1v-26Zm34.6,0h81.5v26H648.7v-26Zm81.5,0h34.6v26H730.2v-26Zm34.6,0h78v26h-78v-26Zm78,0h35.9v26H842.8v-26ZM26,519.7H60.6v26H26v-26Zm34.6,0H350.8v26H60.6v-26Zm290.2,0h77.9v26H350.8v-26Zm77.9,0h104v26h-104v-26Zm104,0h81.4v26H532.7v-26Zm81.4,0h34.6v26H614.1v-26Zm34.6,0h81.5v26H648.7v-26Zm81.5,0h34.6v26H730.2v-26Zm34.6,0h78v26h-78v-26Zm78,0h35.9v26H842.8v-26ZM26,545.7H60.6v26H26v-26Zm34.6,0H350.8v26H60.6v-26Zm290.2,0H879.1v26H350.8v-26ZM26,571.6H879.1V744.9H26V571.6Z" class="g0"/>
+<image preserveAspectRatio="none" x="736" y="606" width="87" height="85" xlink:href="img/3.png"/>
+</svg>

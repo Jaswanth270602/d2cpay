@@ -1,0 +1,526 @@
+[02-Aug-2025 11:39:00 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 11:39:04 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 11:51:38 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 11:51:49 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 07:00:22 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/public/index.php on line 34
+[02-Aug-2025 07:00:22 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/public/vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/public/index.php on line 34
+[02-Aug-2025 12:38:37 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 12:40:52 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 12:47:40 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 12:50:39 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 12:50:52 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:06:19 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:07:19 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:08:00 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:08:10 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:12:33 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:12:45 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:12:46 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:15:42 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:19:15 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:19:28 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:19:29 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 13:23:03 Asia/Kolkata] PHP Fatal error:  Uncaught UnexpectedValueException: There is no existing directory at "/home/marspay/laravel/storage/logs" and it could not be created: Permission denied in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php:205
+Stack trace:
+#0 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php(123): Monolog\Handler\StreamHandler->createDir()
+#1 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/AbstractProcessingHandler.php(44): Monolog\Handler\StreamHandler->write()
+#2 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(390): Monolog\Handler\AbstractProcessingHandler->handle()
+#3 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Logger.php(645): Monolog\Logger->addRecord()
+#4 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(184): Monolog\Logger->error()
+#5 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/Logger.php(97): Illuminate\Log\Logger->writeLog()
+#6 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\Logger->error()
+#7 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#8 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#9 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(730): Illuminate\Foundation\Exceptions\Handler->report()
+#10 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(650): Illuminate\Foundation\Exceptions\Handler->renderHttpException()
+#11 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(556): Illuminate\Foundation\Exceptions\Handler->prepareResponse()
+#12 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(473): Illuminate\Foundation\Exceptions\Handler->renderExceptionResponse()
+#13 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(218): Illuminate\Foundation\Exceptions\Handler->render()
+#14 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(195): Illuminate\Foundation\Bootstrap\HandleExceptions->renderHttpResponse()
+#15 /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException()
+#16 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#17 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/vendor/monolog/monolog/src/Monolog/Handler/StreamHandler.php on line 205
+[02-Aug-2025 07:55:26 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 07:55:26 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 07:55:41 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 07:55:41 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:00:27 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:00:27 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:14:17 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:14:17 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:16:12 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:16:12 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:19:29 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:19:29 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:24:15 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:24:15 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:58:06 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:58:06 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:59:30 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 08:59:30 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:00:18 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:00:18 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:01:06 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:01:06 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:22:03 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 09:22:03 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:37:25 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:37:25 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:37:45 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:37:45 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:38:06 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:38:06 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:42:41 UTC] PHP Warning:  require(/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
+[02-Aug-2025 10:42:41 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/r7q5p6bm505j/public_html/kartmitra.com/../vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/r7q5p6bm505j/public_html/kartmitra.com/index.php on line 14
