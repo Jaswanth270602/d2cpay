@@ -270,7 +270,6 @@ class ZigPayController extends Controller
 
         Gatewayorder::where('id', $gatewayOrderId)->update([
             'remark' => $transactionId,
-            'utr' => $utr,
         ]);
 
         if ($statusCode !== '1' && empty($transactionId) && empty($qrString)) {
@@ -355,19 +354,8 @@ class ZigPayController extends Controller
             return response()->json(['status' => 'failure', 'message' => 'Invalid callback payload'], 400);
         }
         return DB::transaction(function () use ($clientId, $statusId, $amount, $utr, $message, $referenceId, $ctime) {
-            $gatewayOrder = Gatewayorder::where('order_token', $clientId)->lockForUpdate()->first();
-            if (!$gatewayOrder) {
-                $gatewayOrder = Gatewayorder::where('client_id', $clientId)->lockForUpdate()->first();
-            }
-            if (!$gatewayOrder) {
-                $gatewayOrder = Gatewayorder::where('remark', $clientId)->lockForUpdate()->first();
-            }
-            if (!$gatewayOrder && is_numeric($clientId)) {
-                $gatewayOrder = Gatewayorder::where('id', (int)$clientId)->lockForUpdate()->first();
-            }
-            if (!$gatewayOrder && $referenceId !== '') {
-                $gatewayOrder = Gatewayorder::where('remark', $referenceId)->lockForUpdate()->first();
-            }
+            $gatewayOrder = Gatewayorder::where('client_id', $clientId)->lockForUpdate()->first();
+           
             if (!$gatewayOrder) {
                 return response()->json(['status' => 'failure', 'message' => 'Order not found'], 404);
             }
