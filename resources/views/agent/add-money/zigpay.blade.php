@@ -129,6 +129,28 @@
         font-weight: 600;
         cursor: pointer;
     }
+
+    #zigpay-result-success, #zigpay-result-failure, #zigpay-result-timeout {
+        padding: 16px;
+        border-radius: 12px;
+        margin-top: 8px;
+        text-align: center;
+    }
+    #zigpay-result-success {
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: #065f46;
+    }
+    #zigpay-result-failure, #zigpay-result-timeout {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #991b1b;
+    }
+    #zigpay-status-pending {
+        font-size: 14px;
+        color: #5c5c5c;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="main-content-body d-flex justify-content-center align-items-center" style="min-height:100vh;">
@@ -164,23 +186,39 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content modal-content-demo">
             <div class="modal-header">
-                <h6 class="modal-title">Scan & Pay</h6>
+                <h6 class="modal-title" id="zigpay-modal-title">Scan & Pay</h6>
                 <button aria-label="Close" class="close" data-dismiss="modal" type="button"><span aria-hidden="true">×</span></button>
             </div>
             <div class="modal-body">
-                <center>
-                    <h4>Open any UPI app and scan this QR</h4>
-                    <br>
-                    <img src="" class="qr_code" id="qrCodeUrl" style="width: 200px; display:none;">
-                    <p id="qrFallbackMsg" style="display:none; color:#5c5c5c; margin-bottom:12px;">
-                        QR image is unavailable for this order. Use the button below to complete payment.
-                    </p>
-                    <hr>
-                    Post successful payment, balance will reflect in your wallet shortly.
-                </center>
-                <a class="btn btn-primary btn-lg btn-block" href="" role="button" id="qrStringBtn">
-                    Pay <span id="amountString"></span> Using App
-                </a>
+                <div id="zigpay-qr-section">
+                    <center>
+                        <h4>Open any UPI app and scan this QR</h4>
+                        <br>
+                        <img src="" class="qr_code" id="qrCodeUrl" style="width: 200px; display:none;">
+                        <p id="qrFallbackMsg" style="display:none; color:#5c5c5c; margin-bottom:12px;">
+                            QR image is unavailable for this order. Use the button below to complete payment.
+                        </p>
+                        <p id="zigpay-status-pending"><i class="fa fa-spinner fa-spin"></i> Waiting for payment…</p>
+                        <hr>
+                        Post successful payment, balance will reflect in your wallet shortly.
+                    </center>
+                    <a class="btn btn-primary btn-lg btn-block mt-2" href="" role="button" id="qrStringBtn">
+                        Pay <span id="amountString"></span> Using App
+                    </a>
+                </div>
+                <div id="zigpay-result-success" style="display:none;">
+                    <strong>Payment successful</strong>
+                    <p class="mb-0 mt-2">Your wallet will update shortly.</p>
+                    <p class="mb-0 mt-1 small" id="zigpay-success-utr"></p>
+                </div>
+                <div id="zigpay-result-failure" style="display:none;">
+                    <strong>Payment failed</strong>
+                    <p class="mb-0 mt-2" id="zigpay-failure-msg">Payment could not be completed.</p>
+                </div>
+                <div id="zigpay-result-timeout" style="display:none;">
+                    <strong>Status unclear</strong>
+                    <p class="mb-0 mt-2">No confirmation received in time. If you paid, check your wallet or statement.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -189,6 +227,105 @@
 <script>
     const MIN_AMOUNT = {{ $min_amount ?? 100 }};
     const MAX_AMOUNT = {{ $max_amount ?? 50000 }};
+
+    let zigpayPollInterval = null;
+    let zigpayPollCount = 0;
+    let zigpayCurrentTxnid = null;
+    const ZIGPAY_POLL_MS = 8000;
+    const ZIGPAY_MAX_POLLS = 112;
+
+    function stopZigpayPolling() {
+        if (zigpayPollInterval) {
+            clearInterval(zigpayPollInterval);
+            zigpayPollInterval = null;
+        }
+        zigpayPollCount = 0;
+    }
+
+    function resetZigpayModalPaymentUi() {
+        $('#zigpay-modal-title').text('Scan & Pay');
+        $('#zigpay-qr-section').show();
+        $('#zigpay-result-success').hide();
+        $('#zigpay-result-failure').hide();
+        $('#zigpay-result-timeout').hide();
+        $('#zigpay-status-pending').html('<i class="fa fa-spinner fa-spin"></i> Waiting for payment…');
+    }
+
+    function showZigpaySuccess(data) {
+        stopZigpayPolling();
+        $('#zigpay-modal-title').text('Payment successful');
+        $('#zigpay-qr-section').hide();
+        $('#zigpay-result-failure').hide();
+        $('#zigpay-result-timeout').hide();
+        var utr = (data && data.utr) ? data.utr : '';
+        $('#zigpay-success-utr').text(utr ? ('UTR / ref: ' + utr) : '');
+        $('#zigpay-result-success').show();
+    }
+
+    function showZigpayFailure(message) {
+        stopZigpayPolling();
+        $('#zigpay-modal-title').text('Payment failed');
+        $('#zigpay-qr-section').hide();
+        $('#zigpay-result-success').hide();
+        $('#zigpay-result-timeout').hide();
+        $('#zigpay-failure-msg').text(message || 'Payment could not be completed.');
+        $('#zigpay-result-failure').show();
+    }
+
+    function showZigpayTimeout() {
+        stopZigpayPolling();
+        $('#zigpay-modal-title').text('Payment');
+        $('#zigpay-qr-section').hide();
+        $('#zigpay-result-success').hide();
+        $('#zigpay-result-failure').hide();
+        $('#zigpay-result-timeout').show();
+    }
+
+    function pollZigpayOrderStatus() {
+        if (!zigpayCurrentTxnid) {
+            return;
+        }
+        $.ajax({
+            type: 'POST',
+            url: "{{ url('agent/add-money/v8/order-status') }}",
+            data: {
+                _token: $("input[name=_token]").val(),
+                txnid: zigpayCurrentTxnid
+            },
+            success: function (res) {
+                if (!res || res.ok === false) {
+                    return;
+                }
+                if (res.payment_status === 'success') {
+                    showZigpaySuccess(res.data || {});
+                } else if (res.payment_status === 'failed') {
+                    showZigpayFailure(res.message);
+                }
+            },
+            error: function () { /* keep polling */ }
+        });
+    }
+
+    function startZigpayPolling(txnid) {
+        stopZigpayPolling();
+        zigpayCurrentTxnid = txnid;
+        zigpayPollCount = 0;
+        zigpayPollInterval = setInterval(function () {
+            zigpayPollCount++;
+            if (zigpayPollCount >= ZIGPAY_MAX_POLLS) {
+                showZigpayTimeout();
+                return;
+            }
+            pollZigpayOrderStatus();
+        }, ZIGPAY_POLL_MS);
+        pollZigpayOrderStatus();
+    }
+
+    $('#view-qrcode-model').on('hidden.bs.modal', function () {
+        stopZigpayPolling();
+        zigpayCurrentTxnid = null;
+        resetZigpayModalPaymentUi();
+    });
 
     function toggleBtn() {
         let amount = parseFloat(document.getElementById("amount").value.trim());
@@ -239,6 +376,7 @@
             success: function(msg){
                 $(".loader").hide();
                 if (msg.status == 'success') {
+                    resetZigpayModalPaymentUi();
                     if (msg.data.qrCodeUrl) {
                         $("#qrCodeUrl").attr('src', msg.data.qrCodeUrl);
                         $("#qrCodeUrl").show();
@@ -254,6 +392,9 @@
                     }
                     $("#amountString").text(amount);
                     $("#view-qrcode-model").modal('show');
+                    if (msg.data.txnid) {
+                        startZigpayPolling(msg.data.txnid);
+                    }
                 } else {
                     showErrorCard(msg.message || 'Failed to create order. Please try again.');
                 }

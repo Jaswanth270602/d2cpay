@@ -368,6 +368,60 @@ class ZigPayController extends Controller
             ->header('Content-Type', 'image/svg+xml');
     }
 
+    /**
+     * Web UI polling: gateway row is updated by ZigPay callback (success → 1, failure → 2).
+     */
+    public function webOrderStatus(Request $request)
+    {
+        $rules = [
+            'txnid' => 'required|integer',
+        ];
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'message' => $validator->messages()->first()]);
+        }
+
+        $gatewayOrder = Gatewayorder::where('id', (int)$request->txnid)
+            ->where('user_id', Auth::id())
+            ->where('api_id', $this->api_id)
+            ->first();
+
+        if (!$gatewayOrder) {
+            return response()->json(['ok' => false, 'message' => 'Order not found']);
+        }
+
+        $sid = (int)$gatewayOrder->status_id;
+
+        if ($sid === 1) {
+            $utr = (string)($gatewayOrder->remark ?? '');
+            if ($utr === '' && !empty($gatewayOrder->report_id)) {
+                $utr = (string)(Report::where('id', $gatewayOrder->report_id)->value('txnid') ?? '');
+            }
+
+            return response()->json([
+                'ok' => true,
+                'payment_status' => 'success',
+                'data' => [
+                    'utr' => $utr,
+                    'amount' => (float)$gatewayOrder->amount,
+                ],
+            ]);
+        }
+
+        if ($sid === 2) {
+            return response()->json([
+                'ok' => true,
+                'payment_status' => 'failed',
+                'message' => 'Payment failed or was declined.',
+            ]);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'payment_status' => 'pending',
+        ]);
+    }
+
     public function callbackUrl(Request $request)
     {
         $ctime = now();

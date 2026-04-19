@@ -796,6 +796,7 @@ Route::middleware(['auth'])->group(function () {
         Route::group(['prefix' => 'add-money/v8', 'middleware' => 'auth'], function () {
             Route::get('/welcome', [App\Http\Controllers\Agent\ZigPayController::class, 'welcome']);
             Route::post('/create-order', [App\Http\Controllers\Agent\ZigPayController::class, 'createOrderWeb']);
+            Route::post('/order-status', [App\Http\Controllers\Agent\ZigPayController::class, 'webOrderStatus']);
             Route::get('/view-qrcode', [App\Http\Controllers\Agent\ZigPayController::class, 'viewQrcode']);
         });
 

@@ -15,13 +15,13 @@
                    {{-- <a class="nav-link {{(Request::is('*upi-collection') ? 'active' : '')}}" href="{{url('agent/developer/upi-collection')}}">Add Money</a>--}}
                     {{-- <a class="nav-link {{(Request::is('*qr-code-docs') ? 'active' : '')}}" href="{{url('agent/developer/qr-code-docs')}}">QR Code</a>--}}
                     <a class="nav-link {{(Request::is('*payout-docs') ? 'active' : '')}}" href="{{url('agent/developer/payout-docs')}}">Payout</a>
-                    <a class="nav-link {{(Request::is('*collect-payment') ? 'active' : '')}}" href="{{url('agent/developer/collect-payment')}}">Payin 2</a>
-                    <a class="nav-link {{(Request::is('*payin-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-docs')}}">Payin 3</a>
-                    <a class="nav-link {{(Request::is('*payin-two-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-two-docs')}}">Payin 4</a>
-                    <a class="nav-link {{(Request::is('*payin-five-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-five-docs')}}">Payin 5</a>
-                    <a class="nav-link {{(Request::is('*payin-five-1-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-five-1-docs')}}">Payin 5.1</a>
-                    <a class="nav-link {{(Request::is('*payin-six-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-six-docs')}}">Payin 6</a>
-                    <a class="nav-link {{(Request::is('*payin-seven-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-seven-docs')}}">Payin 7</a>
+                    <!-- <a class="nav-link {{(Request::is('*collect-payment') ? 'active' : '')}}" href="{{url('agent/developer/collect-payment')}}">Payin 2</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-docs')}}">Payin 3</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-two-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-two-docs')}}">Payin 4</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-five-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-five-docs')}}">Payin 5</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-five-1-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-five-1-docs')}}">Payin 5.1</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-six-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-six-docs')}}">Payin 6</a> -->
+                    <!-- <a class="nav-link {{(Request::is('*payin-seven-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-seven-docs')}}">Payin 7</a> -->
                     <a class="nav-link {{(Request::is('*payin-eight-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-eight-docs')}}">Payin 8</a>
                     <input type="hidden" id="BiometricData">
                 </nav>
