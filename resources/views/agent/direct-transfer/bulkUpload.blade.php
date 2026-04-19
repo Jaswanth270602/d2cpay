@@ -85,7 +85,7 @@
                                 <li><strong>Enter Mode:</strong> In the "mode" column, select either NEFT or IMPS for each record.</li>
                                 <li><strong>Upload Limit:</strong> You can upload up to 100 records at once. If you try to upload more than 100 records, the upload will fail, and no data will be saved.</li>
                             </ol>
-                            <p>Download the template here: <a href="{{url('bulk_payout_upload.xlsx')}}" target="_blank" download="">Download Excel Template</a></p>
+                            <p>Download the template here: <a href="{{url('agent/payout/v2/bulk-template')}}">Download Excel Template</a></p>
 
                         </div>
 

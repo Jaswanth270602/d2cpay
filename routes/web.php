@@ -603,6 +603,7 @@ Route::middleware(['auth'])->group(function () {
         Route::group(['prefix' => 'payout/v2', 'middleware' => 'auth'], function () {
             Route::get('/welcome', [App\Http\Controllers\Agent\DirectTransferController::class, 'welcome']);
             Route::get('/bulk-upload', [App\Http\Controllers\Agent\DirectTransferController::class, 'bulkUpload']);
+            Route::get('/bulk-template', [App\Http\Controllers\Agent\DirectTransferController::class, 'downloadBulkTemplate']);
             Route::post('/bulk-upload', [App\Http\Controllers\Agent\DirectTransferController::class, 'bulkUploadStore']);
             Route::post('/get-ifsc-code', [App\Http\Controllers\Agent\DirectTransferController::class, 'getIfscCode']);
             Route::post('/account-verify', [App\Http\Controllers\Agent\DirectTransferController::class, 'accountVerifyWeb']);

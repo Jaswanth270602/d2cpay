@@ -38,6 +38,7 @@ use App\Library\VtransactLibrary;
 use App\Library\SafepPayLibrary;
 
 use App\Imports\BulkUpload;
+use App\Exports\BulkPayoutTemplateExport;
 
 class DirectTransferController extends Controller
 {
@@ -81,6 +82,11 @@ class DirectTransferController extends Controller
         } else {
             return redirect()->back();
         }
+    }
+
+    function downloadBulkTemplate()
+    {
+        return Excel::download(new BulkPayoutTemplateExport(), 'bulk_payout_upload.xlsx');
     }
 
     function getIfscCode(Request $request)
@@ -281,10 +287,17 @@ class DirectTransferController extends Controller
         Excel::import($import, $file);
         DB::table('check_duplicates')->insert(['dupplicate_transaction' => $request->dupplicate_transaction]);
         $payoutbulkuploads = Payoutbulkupload::where('user_id', $user_id)->where('bulk_id', $uniqueId)->get();
+        if (count($payoutbulkuploads) == 0) {
+            return redirect()->back()->with('failure', 'No valid rows found. Please use the sample template and fill at least one row.');
+        }
         if (count($payoutbulkuploads) > 100) {
             Payoutbulkupload::where('user_id', $user_id)->where('bulk_id', $uniqueId)->delete();
             return redirect()->back()->with('failure', 'The file contains more than 100 rows. Please upload a smaller file.');
         }
+        $processedRows = 0;
+        $createdReportRows = 0;
+        $skippedRows = 0;
+        $failureReasons = [];
         foreach ($payoutbulkuploads as $value) {
             sleep(1);
             $mobile_number = $value->mobile_number;
@@ -293,13 +306,45 @@ class DirectTransferController extends Controller
             $ifsc_code = $value->ifsc_code;
             $account_number = $value->account_number;
             $amount = $value->amount;
-            $channel_id = ($value->mode == 'IMPS') ? 2 : 1;
+            $uploadMode = strtoupper(trim((string)$value->mode));
+            if (!in_array($uploadMode, ['IMPS', 'NEFT'])) {
+                $skippedRows++;
+                continue;
+            }
+            $channel_id = ($uploadMode == 'IMPS') ? 2 : 1;
             $client_id = '';
             $mode = 'Bulk Upload';
-            $this->transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id);
+            $response = $this->transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id);
+            $processedRows++;
+
+            // Report row exists when transfer API returns a non-empty payid (insert_id).
+            $payload = method_exists($response, 'getData') ? (array)$response->getData(true) : [];
+            if (!empty($payload['payid'])) {
+                $createdReportRows++;
+            } else {
+                $skippedRows++;
+                $message = trim((string)($payload['message'] ?? ''));
+                if ($message !== '') {
+                    $failureReasons[] = $message;
+                }
+            }
         }
         Payoutbulkupload::where('user_id', $user_id)->where('bulk_id', $uniqueId)->delete();
-        return redirect()->back()->with('success', 'Excel file has been successfully updated. To check the transaction status, please review the report');
+        if ($processedRows == 0) {
+            return redirect()->back()->with('failure', 'No rows were processed. Ensure mode is IMPS or NEFT in each row.');
+        }
+        if ($createdReportRows == 0) {
+            $reasonText = '';
+            if (!empty($failureReasons)) {
+                $reasonText = ' Reason: ' . implode(' | ', array_unique($failureReasons));
+            }
+            return redirect()->back()->with('failure', 'Upload received, but no transaction was created. Please check balance/service status and file data.' . $reasonText);
+        }
+
+        return redirect()->back()->with(
+            'success',
+            "Bulk upload completed. Total rows: {$processedRows}, report entries created: {$createdReportRows}, skipped: {$skippedRows}."
+        );
 
     }
 
