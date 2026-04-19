@@ -1172,6 +1172,7 @@ class ApimasterController extends Controller
                             'provider_status' => 1,
                             'created_at' => $ctime,
                             'status_id' => 0,
+                            'daily_limit' => 0,
                         ]);
                     }
                 }

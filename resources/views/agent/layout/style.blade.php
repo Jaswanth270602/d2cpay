@@ -41,8 +41,8 @@
     .sticky-pin .horizontalMenucontainer .main-header.hor-header {
         background: linear-gradient(45deg, {{ $color_start}}, {{ $color_end}}); }
 
-    /* Profile dropdown: Developer Zone icon — cream on theme gradient (readable vs dark default) */
-    .main-profile-menu .developer-zone-icon-badge {
+    /* Developer Zone row icon — agent: teal/cyan (distinct from company theme) */
+    .dashboard-agent .main-profile-menu .developer-zone-icon-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -50,46 +50,50 @@
         height: 30px;
         min-width: 30px;
         border-radius: 50%;
-        background: linear-gradient(45deg, {{ $color_start}}, {{ $color_end}});
+        background: linear-gradient(135deg, #0d9488, #2dd4bf);
         margin-right: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 1px 4px rgba(13, 148, 136, 0.35);
     }
-    .main-profile-menu .developer-zone-icon-badge i {
-        color: #FFF8E7 !important;
+    .dashboard-agent .main-profile-menu .developer-zone-icon-badge i {
+        color: #ffffff !important;
         font-size: 14px !important;
         margin-right: 0 !important;
         width: auto !important;
     }
 
-    /* Header avatar: developers (no photo) — same treatment as bell / menu icons (white on thin white ring) */
-    .main-header .main-profile-menu .profile-user .developer-profile-avatar {
+    /* Beautiful default avatar: initials on gradient (no stock photo) */
+    .main-profile-menu .profile-user .avatar-initials,
+    .main-header-profile .main-img-user .avatar-initials {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
+        width: 37px;
+        height: 37px;
+        min-width: 37px;
         border-radius: 50%;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: transparent;
-        box-sizing: border-box;
-        margin: 0 7px;
-    }
-    .main-header .main-profile-menu .profile-user .developer-profile-avatar i {
-        color: #fff !important;
-        font-size: 1.1rem !important;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: #fff;
+        font-size: 14px;
         line-height: 1;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+        border: 2px solid rgba(255, 255, 255, 0.35);
     }
-    .main-header-profile .main-img-user .developer-profile-avatar-lg {
+    .dashboard-agent .main-profile-menu .profile-user .avatar-initials,
+    .dashboard-agent .main-header-profile .main-img-user .avatar-initials {
+        background: linear-gradient(145deg, #0d9488 0%, #2563eb 100%);
+    }
+    .dashboard-admin .main-profile-menu .profile-user .avatar-initials,
+    .dashboard-admin .main-header-profile .main-img-user .avatar-initials {
+        background: linear-gradient(145deg, #7c3aed 0%, #db2777 100%);
+    }
+    .main-header-profile .main-img-user .avatar-initials.avatar-initials-lg {
         width: 80px;
         height: 80px;
         min-width: 80px;
-        border: 2px solid rgba(255, 255, 255, 0.35);
-        background: rgba(255, 255, 255, 0.08);
-    }
-    .main-header-profile .main-img-user .developer-profile-avatar-lg i {
-        font-size: 2rem !important;
-        color: #fff !important;
+        font-size: 26px;
+        font-weight: 700;
+        border-width: 3px;
     }
 
 </style>

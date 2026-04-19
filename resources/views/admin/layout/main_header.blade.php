@@ -77,7 +77,7 @@
     @include('agent.layout.style')
 </head>
 
-<body class="main-body  app">
+<body class="main-body app dashboard-admin">
 
 @if (Auth::guest())
 
@@ -283,7 +283,7 @@
                         <img src="{{Auth::User()->member->profile_photo}}" alt="user-img"
                              class="rounded-circle mCS_img_loaded">
                     @else
-                        <span class="developer-profile-avatar" title="Profile"><i class="fas fa-user" aria-hidden="true"></i></span>
+                        @include('partials.avatar_initials', ['size' => 'sm'])
                     @endif
                     <span></span></a>
                 <div class="dropdown-menu">
@@ -291,7 +291,7 @@
                         @if(Auth::User()->member->profile_photo)
                             <div class="main-img-user"><img alt="" src="{{Auth::User()->member->profile_photo}}"></div>
                         @else
-                            <div class="main-img-user"><span class="developer-profile-avatar developer-profile-avatar-lg"><i class="fas fa-user" aria-hidden="true"></i></span></div>
+                            <div class="main-img-user">@include('partials.avatar_initials', ['size' => 'lg'])</div>
                         @endif
                         <h6>{{ Auth::User()->name }}</h6>
                         <span>({{ Auth::User()->role->role_title }})</span>

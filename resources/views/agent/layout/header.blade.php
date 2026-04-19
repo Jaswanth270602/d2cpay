@@ -78,7 +78,7 @@
     @include('agent.layout.style')
 </head>
 
-<body class="main-body app">
+<body class="main-body app dashboard-agent">
 
 
 <script type="text/javascript">
