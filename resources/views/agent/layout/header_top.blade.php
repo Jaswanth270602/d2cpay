@@ -157,7 +157,7 @@
                     <a class="dropdown-item" href="{{url('agent/my-settings')}}"><i class="fas fa-user-cog"></i> Settings</a>
                     <a class="dropdown-item" href="{{url('agent/activity-logs')}}"><i class="far fa-clock"></i> Activity Logs</a>
                     <a class="dropdown-item" href="{{url('agent/my-recharge-commission')}}"><i class="fas fa-rupee-sign"></i> Commission Structure</a>
-                    <a class="dropdown-item" href="{{url('agent/certificate')}}" target="_blank"><i class="fas fa-certificate"></i> Certificate</a>
+                    <!-- <a class="dropdown-item" href="{{url('agent/certificate')}}" target="_blank"><i class="fas fa-certificate"></i> Certificate</a> -->
                     @if(Auth::User()->company->transaction_pin == 1)
                         <a class="dropdown-item" href="{{url('agent/transaction-pin')}}"><i class="fas fa-lock"></i> Transaction Pin</a>
                     @endif
