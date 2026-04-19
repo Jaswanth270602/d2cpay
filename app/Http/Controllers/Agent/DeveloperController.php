@@ -116,8 +116,8 @@ class DeveloperController extends Controller
         if (Auth::User()->role_id == 10) {
             $rules = array(
                 'ip_address' => 'required|ip',
-                'otp' => 'required|digits:6',
                 'password' => 'required',
+                'otp' => 'nullable|digits:6',
             );
             $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
@@ -125,21 +125,20 @@ class DeveloperController extends Controller
             }
             $user_id = Auth::id();
             $ip_address = $request->ip_address;
-            $otp = $request->otp;
+            $otp = $request->input('otp');
             $password = $request->password;
             $userdetail = User::find($user_id);
             $current_password = $userdetail->password;
-            if (Hash::check($password, $current_password)) {
-                if ($userdetail->login_otp == $otp) {
-                    Member::where('user_id', $user_id)->update(['ip_address' => $ip_address]);
-                    return Response()->json(['status' => 'success', 'message' => 'IP Address successfully updated']);
-                } else {
-                    return Response()->json(['status' => 'failure', 'message' => 'OTP not match']);
-                }
-
-            } else {
+            if (!Hash::check($password, $current_password)) {
                 return Response()->json(['status' => 'failure', 'message' => 'Password not match']);
             }
+            if ($request->filled('otp')) {
+                if ((string)$userdetail->login_otp !== (string)$otp) {
+                    return Response()->json(['status' => 'failure', 'message' => 'OTP not match']);
+                }
+            }
+            Member::where('user_id', $user_id)->update(['ip_address' => $ip_address]);
+            return Response()->json(['status' => 'success', 'message' => 'IP Address successfully updated']);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);
         }
@@ -397,29 +396,28 @@ class DeveloperController extends Controller
     {
         if (Auth::User()->role_id == 10) {
             $rules = array(
-                'otp' => 'required|digits:6',
                 'password' => 'required',
+                'otp' => 'nullable|digits:6',
             );
             $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return Response()->json(['status' => 'validation_error', 'errors' => $validator->getMessageBag()->toArray()]);
             }
-            $otp = $request->otp;
+            $otp = $request->input('otp');
             $password = $request->password;
             $user_id = Auth::id();
             $userdetail = User::find($user_id);
             $current_password = $userdetail->password;
-            if (Hash::check($password, $current_password)) {
-                if ($userdetail->login_otp == $otp) {
-                    Member::where('user_id', $user_id)->update(['ip_address' => '']);
-                    return Response()->json(['status' => 'success', 'message' => 'IP address successfully removed']);
-                } else {
-                    return Response()->json(['status' => 'failure', 'message' => 'OTP not match']);
-                }
-
-            } else {
+            if (!Hash::check($password, $current_password)) {
                 return Response()->json(['status' => 'failure', 'message' => 'Password not match']);
             }
+            if ($request->filled('otp')) {
+                if ((string)$userdetail->login_otp !== (string)$otp) {
+                    return Response()->json(['status' => 'failure', 'message' => 'OTP not match']);
+                }
+            }
+            Member::where('user_id', $user_id)->update(['ip_address' => '']);
+            return Response()->json(['status' => 'success', 'message' => 'IP address successfully removed']);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);
         }

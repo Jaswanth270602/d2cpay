@@ -48,53 +48,36 @@
             });
         }
         
-        function add_ipaddress_otp() {
-            $(".loader").show();
-            var token = $("input[name=_token]").val();
+        function add_ipaddress_save_direct() {
+            $("#ip_address_errors").text('');
+            $("#ip_add_password_errors").text('');
+            $("#add_ip_btn").hide();
+            $("#add_ip_btn_loader").show();
             var ip_address = $("#ip_address").val();
-            var dataString = 'ip_address=' + ip_address + '&_token=' + token;
-            $.ajax({
-                type: "POST",
-                url: "{{url('agent/developer/add-ipaddress-otp')}}",
-                data: dataString,
-                success: function (msg) {
-                    $(".loader").hide();
-                    if (msg.status == 'success') {
-                        $("#ip_address_otp_model").modal('show');
-                    } else if(msg.status == 'validation_error'){
-                        $("#ip_address_errors").text(msg.errors.ip_address);
-                    }else{
-                        swal("Failed", msg.message, "error");
-                    }
-                }
-            });
-        }
-        
-        function add_ipaddress_save() {
-            $("#add_ipaddress_btn").hide();
-            $("#add_ipaddress_btn_loader").show();
-            var ip_address = $("#ip_address").val();
-            var otp = $("#ip_address_otp").val();
-            var password = $("#ip_address_password").val();
+            var password = $("#ip_add_password").val();
             var token = $("input[name=_token]").val();
-            var dataString = 'ip_address=' + ip_address + '&otp=' + otp + '&password=' + password +  '&_token=' + token;
+            var dataString = 'ip_address=' + encodeURIComponent(ip_address) + '&password=' + encodeURIComponent(password) + '&_token=' + token;
             $.ajax({
                 type: "POST",
                 url: "{{url('agent/developer/ip-address-save')}}",
                 data: dataString,
                 success: function (msg) {
-                    $("#add_ipaddress_btn").show();
-                    $("#add_ipaddress_btn_loader").hide();
+                    $("#add_ip_btn").show();
+                    $("#add_ip_btn_loader").hide();
                     if (msg.status == 'success') {
                         swal("Success", msg.message, "success");
                         setTimeout(function () { location.reload(1); }, 2000);
-                    } else if(msg.status == 'validation_error'){
-                        $("#ip_address_errors").text(msg.errors.ip_address);
-                        $("#ip_address_otp_errors").text(msg.errors.otp);
-                        $("#ip_address_password_errors").text(msg.errors.password);
-                    }else{
+                    } else if (msg.status == 'validation_error') {
+                        $("#ip_address_errors").text(msg.errors.ip_address || '');
+                        $("#ip_add_password_errors").text(msg.errors.password || '');
+                    } else {
                         swal("Failed", msg.message, "error");
                     }
+                },
+                error: function () {
+                    $("#add_ip_btn").show();
+                    $("#add_ip_btn_loader").hide();
+                    swal("Failed", "Request failed. Please try again.", "error");
                 }
             });
         }
@@ -123,48 +106,33 @@
             });
         }
 
-        function removeIpAddressOtp (){
-            $(".loader").show();
+        function removeIpAddressSaveDirect() {
+            $("#ip_remove_password_errors").text('');
+            $("#remove_ip_btn").hide();
+            $("#remove_ip_btn_loader").show();
+            var password = $("#ip_remove_password").val();
             var token = $("input[name=_token]").val();
-            var dataString = '_token=' + token;
-            $.ajax({
-                type: "POST",
-                url: "{{url('agent/developer/remove-ip-address-otp')}}",
-                data: dataString,
-                success: function (msg) {
-                    $(".loader").hide();
-                    if(msg.status){
-                        $("#remove_ip_address_otp_model").modal('show');
-                    }else{
-                        swal("Failed", msg.message, "error");
-                    }
-                }
-            });
-        }
-
-        function removeIpAddressSave (){
-            $("#removeIpAddressBtn").hide();
-            $("#removeIpAddressBtn_loader").show();
-            var otp = $("#removeIpAddressOTP").val();
-            var password = $("#removeIpAddressPassword").val();
-            var token = $("input[name=_token]").val();
-            var dataString = 'otp=' + otp + '&password=' + password +  '&_token=' + token;
+            var dataString = 'password=' + encodeURIComponent(password) + '&_token=' + token;
             $.ajax({
                 type: "POST",
                 url: "{{url('agent/developer/remove-ip-address-save')}}",
                 data: dataString,
                 success: function (msg) {
-                    $("#removeIpAddressBtn").show();
-                    $("#removeIpAddressBtn_loader").hide();
+                    $("#remove_ip_btn").show();
+                    $("#remove_ip_btn_loader").hide();
                     if (msg.status == 'success') {
                         swal("Success", msg.message, "success");
                         setTimeout(function () { location.reload(1); }, 2000);
-                    } else if(msg.status == 'validation_error'){
-                        $("#removeIpAddressOTP_errors").text(msg.errors.otp);
-                        $("#removeIpAddressPassword_errors").text(msg.errors.password);
-                    }else{
+                    } else if (msg.status == 'validation_error') {
+                        $("#ip_remove_password_errors").text(msg.errors.password || '');
+                    } else {
                         swal("Failed", msg.message, "error");
                     }
+                },
+                error: function () {
+                    $("#remove_ip_btn").show();
+                    $("#remove_ip_btn_loader").hide();
+                    swal("Failed", "Request failed. Please try again.", "error");
                 }
             });
         }
@@ -204,14 +172,29 @@
                                 <div class="form-group">
                                     <div class="text-bold-600 font-medium-2 ">IP Address</div> <p><small class="text-muted">Request accepted only from Following IP's !</small></p>
                                     <div>
-                                        <table class="table" id="Ipaddress" style="width: 50%">
+                                        <table class="table" id="Ipaddress" style="width: 100%; max-width: 640px;">
 
                                             <tbody>
                                             @if(Auth::User()->member->ip_address)
                                                 <tr>
                                                     <td>{{ Auth::User()->member->ip_address }}</td>
                                                     <td><i class="fa fa-check tx-success mg-r-8 right"></i></td>
-                                                    <td><button class="btn btn-danger btn-sm waves-effect waves-light gentok" type="button" onclick="removeIpAddressOtp()">Remove</button></td>
+                                                    <td style="min-width: 260px; vertical-align: middle;">
+                                                        <div class="ip-remove-controls">
+                                                            <input type="password" id="ip_remove_password" class="form-control mb-2" style="min-height: 44px; font-size: 15px; max-width: 280px;" placeholder="Login password" autocomplete="current-password">
+                                                            <div class="d-flex align-items-center flex-wrap">
+                                                                <button class="btn btn-danger waves-effect waves-light gentok px-4 py-2" type="button" id="remove_ip_btn" onclick="removeIpAddressSaveDirect()" style="min-height: 44px; font-size: 15px;">Remove</button>
+                                                                <button class="btn btn-primary ml-2" type="button" id="remove_ip_btn_loader" disabled style="display:none; min-height: 44px;"><span class="spinner-border spinner-border-sm"></span></button>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3">
+                                                        <ul class="parsley-errors-list filled mb-0">
+                                                            <li class="parsley-required" id="ip_remove_password_errors" style="color:#cc1f1a;"></li>
+                                                        </ul>
+                                                    </td>
                                                 </tr>
                                             @endif
                                             </tbody>
@@ -221,14 +204,19 @@
                                 </div>
                             </div>
                             <div class="col-6"><div class="text-bold-600 font-medium-2 ">Add Ip</div>
-                                <div class="input-group">
-                                    <input type="text" id="ip_address" name="ip_address" class="form-control" aria-describedby="button-add" placeholder="Enter New IP Addresses">
+                                <div class="input-group mb-2">
+                                    <input type="text" id="ip_address" name="ip_address" class="form-control" style="min-height: 44px; font-size: 15px;" aria-describedby="button-add" placeholder="Enter New IP Addresses">
                                     <div class="input-group-append" id="button-add">
-                                        <button class="btn btn-danger waves-effect waves-light add_ip" type="button" onclick="add_ipaddress_otp()">Add IP Address</button>
+                                        <button class="btn btn-danger waves-effect waves-light add_ip px-4 py-2" type="button" id="add_ip_btn" onclick="add_ipaddress_save_direct()" style="min-height: 44px; font-size: 15px;">Add IP Address</button>
+                                        <button class="btn btn-primary px-3" type="button" id="add_ip_btn_loader" disabled style="display:none; min-height: 44px;"><span class="spinner-border spinner-border-sm"></span></button>
                                     </div>
+                                </div>
+                                <div class="form-group mb-1">
+                                    <input type="password" id="ip_add_password" class="form-control" style="min-height: 44px; font-size: 15px;" placeholder="Your login password" autocomplete="current-password">
                                 </div>
                                 <ul class="parsley-errors-list filled">
                                     <li class="parsley-required" id="ip_address_errors"></li>
+                                    <li class="parsley-required" id="ip_add_password_errors" style="color:#cc1f1a;"></li>
                                 </ul>
                                 <p><small class="text-muted"> ie : 123.45.6.789 or dynamic </small></p>
                             </div>

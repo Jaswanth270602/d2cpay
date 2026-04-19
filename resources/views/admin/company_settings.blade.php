@@ -424,15 +424,15 @@
                                     <div class="form-group">
                                         <label for="name">Payout Route</label>
                                         <select class="form-control select2" id="payout_route">
-                                            <!-- <option value="2" @if($payout_route == 2) selected @endif>Mnppay</option> -->
-                                            <!-- <option value="4" @if($payout_route == 4) selected @endif>Accosis</option> -->
-                                            <!-- <option value="5" @if($payout_route == 5) selected @endif>Pay Wize</option> -->
-                                            <!-- <option value="6" @if($payout_route == 6) selected @endif>Pay2all</option> -->
-                                            <!-- <option value="7" @if($payout_route == 7) selected @endif>PocketHub (Payout)</option> -->
-                                            <!-- <option value="10" @if($payout_route == 10) selected @endif>Punji Kendra</option> -->
-                                            <!-- <option value="11" @if($payout_route == 11) selected @endif>Razor Pay</option> -->
-                                            <!-- <option value="12" @if($payout_route == 12) selected @endif>Vtransact</option> -->
-                                            <!-- <option value="14" @if($payout_route == 14) selected @endif>SafepPay</option> -->
+                                            <option value="2" @if($payout_route == 2) selected @endif>Mnppay</option>
+                                            <option value="4" @if($payout_route == 4) selected @endif>Accosis</option>
+                                            <option value="5" @if($payout_route == 5) selected @endif>Pay Wize</option>
+                                            <option value="6" @if($payout_route == 6) selected @endif>Pay2all</option>
+                                            <option value="7" @if($payout_route == 7) selected @endif>PocketHub (Payout)</option>
+                                            <option value="10" @if($payout_route == 10) selected @endif>Punji Kendra</option>
+                                            <option value="11" @if($payout_route == 11) selected @endif>Razor Pay</option>
+                                            <option value="12" @if($payout_route == 12) selected @endif>Vtransact</option>
+                                            <option value="14" @if($payout_route == 14) selected @endif>SafepPay</option>
                                             <option value="15" @if($payout_route == 15) selected @endif>ZigPay</option>
                                         </select>
                                         <ul class="parsley-errors-list filled">

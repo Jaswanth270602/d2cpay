@@ -41,6 +41,57 @@
     .sticky-pin .horizontalMenucontainer .main-header.hor-header {
         background: linear-gradient(45deg, {{ $color_start}}, {{ $color_end}}); }
 
+    /* Profile dropdown: Developer Zone icon — cream on theme gradient (readable vs dark default) */
+    .main-profile-menu .developer-zone-icon-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, {{ $color_start}}, {{ $color_end}});
+        margin-right: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .main-profile-menu .developer-zone-icon-badge i {
+        color: #FFF8E7 !important;
+        font-size: 14px !important;
+        margin-right: 0 !important;
+        width: auto !important;
+    }
+
+    /* Header avatar: developers (no photo) — same treatment as bell / menu icons (white on thin white ring) */
+    .main-header .main-profile-menu .profile-user .developer-profile-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: transparent;
+        box-sizing: border-box;
+        margin: 0 7px;
+    }
+    .main-header .main-profile-menu .profile-user .developer-profile-avatar i {
+        color: #fff !important;
+        font-size: 1.1rem !important;
+        line-height: 1;
+    }
+    .main-header-profile .main-img-user .developer-profile-avatar-lg {
+        width: 80px;
+        height: 80px;
+        min-width: 80px;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .main-header-profile .main-img-user .developer-profile-avatar-lg i {
+        font-size: 2rem !important;
+        color: #fff !important;
+    }
+
 </style>
 
 <script type="text/javascript">

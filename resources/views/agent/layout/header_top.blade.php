@@ -139,6 +139,8 @@
                 <a class="profile-user d-flex" href="">
                     @if(Auth::User()->member->profile_photo)
                         <img src="{{$cdnLink}}{{Auth::User()->member->profile_photo}}" alt="user-img" class="rounded-circle mCS_img_loaded">
+                    @elseif(Auth::User()->role_id == 10)
+                        <span class="developer-profile-avatar" title="Developer"><i class="fas fa-user" aria-hidden="true"></i></span>
                     @else
                         <img src="{{url('assets/img/profile-pic.jpg')}}" alt="user-img" class="rounded-circle mCS_img_loaded">
                     @endif
@@ -147,6 +149,8 @@
                     <div class="main-header-profile header-img">
                         @if(Auth::User()->member->profile_photo)
                             <div class="main-img-user"><img alt="" src="{{$cdnLink}}{{Auth::User()->member->profile_photo}}"></div>
+                        @elseif(Auth::User()->role_id == 10)
+                            <div class="main-img-user"><span class="developer-profile-avatar developer-profile-avatar-lg"><i class="fas fa-user" aria-hidden="true"></i></span></div>
                         @else
                             <div class="main-img-user"><img alt="" src="{{url('assets/img/profile-pic.jpg')}}"></div>
                         @endif
@@ -162,7 +166,7 @@
                         <a class="dropdown-item" href="{{url('agent/transaction-pin')}}"><i class="fas fa-lock"></i> Transaction Pin</a>
                     @endif
                     @if(Auth::User()->role_id == 10)
-                        <a class="dropdown-item" href="{{url('agent/developer/settings')}}"><i class="fas fa-file-code"></i>  Developer Zone</a>
+                        <a class="dropdown-item" href="{{url('agent/developer/settings')}}"><span class="developer-zone-icon-badge" aria-hidden="true"><i class="fas fa-file-code"></i></span> Developer Zone</a>
                     @endif
                     <a class="dropdown-item" href="{{ route('logout') }}"
                        onclick="event.preventDefault();
