@@ -316,7 +316,7 @@
                     @if(Auth::User()->member->profile_photo)
                         <img src="{{Auth::User()->member->profile_photo}}" alt="user-img" class="rounded-circle mCS_img_loaded">
                     @else
-                        <img src="{{url('assets/img/profile-pic.jpg')}}" alt="user-img" class="rounded-circle mCS_img_loaded">
+                        <span class="developer-profile-avatar" title="Profile"><i class="fas fa-user" aria-hidden="true"></i></span>
                     @endif
                     <span></span></a>
                 <div class="dropdown-menu">
@@ -324,7 +324,7 @@
                         @if(Auth::User()->member->profile_photo)
                             <div class="main-img-user"><img alt="" src="{{Auth::User()->member->profile_photo}}"></div>
                         @else
-                            <div class="main-img-user"><img alt="" src="{{url('assets/img/profile-pic.jpg')}}"></div>
+                            <div class="main-img-user"><span class="developer-profile-avatar developer-profile-avatar-lg"><i class="fas fa-user" aria-hidden="true"></i></span></div>
                         @endif
                         <h6>{{ Auth::User()->name }}</h6>
                         <span>({{ Auth::User()->role->role_title }})</span>

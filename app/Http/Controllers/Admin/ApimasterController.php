@@ -2020,7 +2020,7 @@ class ApimasterController extends Controller
     function bankTransferSwitching()
     {
         if (Auth::User()->role_id == 1) {
-            $apis = Api::whereIn('id', [2, 4, 5, 6, 7, 10, 11, 12, 14])->get();
+            $apis = Api::whereIn('id', [2, 4, 5, 6, 7, 10, 11, 12, 14, 15])->get();
             $data = array('page_title' => 'Money Transfer Switching');
             $users = User::where('status_id', 1)->whereIn('role_id', [8, 9, 10])->get();
             $moneytransferswitchings = Banktransferswitching::get();
