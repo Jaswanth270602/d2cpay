@@ -213,6 +213,8 @@ class ZigPayController extends Controller
         }
 
         $ctime = now();
+        $member = Member::where('user_id', $user_id)->first();
+        $payoutCallbackUrl = $member->payoutcallbackurl ?? '';
         $initialToken = 'ZIGTMP' . time() . rand(1000, 9999);
         $gatewayOrderId = Gatewayorder::insertGetId([
             'user_id' => $user_id,
@@ -224,6 +226,7 @@ class ZigPayController extends Controller
             'status_id' => 3,
             'api_id' => $this->api_id,
             'callback_url' => $callback_url,
+            'payoutcallbackurl' => $payoutCallbackUrl,
             'client_id' => $client_id,
             'mode' => $mode,
             'order_token' => $initialToken,

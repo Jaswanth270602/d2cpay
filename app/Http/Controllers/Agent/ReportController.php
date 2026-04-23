@@ -15,6 +15,7 @@ use App\Models\Status;
 use App\Models\Service;
 use App\Models\State;
 use App\Models\Gatewayorder;
+use App\Models\Apiresponse;
 use \Crypt;
 use App\Library\BasicLibrary;
 
@@ -128,7 +129,7 @@ class ReportController extends Controller
                 "total_balance" => number_format($value->total_balance, 2),
                 "wallet_type" => $wallet_type,
                 "state_name" => $state_name,
-                'reason' => $value->reason,
+                'reason' => $this->resolveFailureReason($value),
                 'client_id' => $client_id,
                 "status" => '<span class="' . $value->status->class . '">' . $value->status->status . '</span>',
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges(' . $value->id . ')"><i class="fas fa-eye"></i> View</button>',
@@ -142,6 +143,62 @@ class ReportController extends Controller
         );
         echo json_encode($response);
         exit;
+    }
+
+    private function resolveFailureReason(Report $report): string
+    {
+        $reason = trim((string)$report->reason);
+        if ($reason !== '') {
+            return $reason;
+        }
+
+        if ((int)$report->status_id === 1) {
+            return '';
+        }
+
+        $txnid = trim((string)$report->txnid);
+        if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
+            if ($txnid !== '' && stripos($txnid, 'UTR') === false) {
+                return $txnid;
+            }
+        }
+
+        $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
+        if (!$latestApi) {
+            $gatewayOrder = Gatewayorder::where('report_id', $report->id)
+                ->orWhere('id', $report->payid)
+                ->orWhere('client_id', $report->client_id)
+                ->orderBy('id', 'DESC')
+                ->first();
+            if ($gatewayOrder) {
+                $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
+            }
+        }
+
+        if ($latestApi) {
+            $message = trim((string)$latestApi->message);
+            if ($message !== '') {
+                $decoded = json_decode($message, true);
+                if (is_array($decoded)) {
+                    foreach (['message', 'responseMessage', 'error', 'errors', 'status'] as $key) {
+                        if (!empty($decoded[$key])) {
+                            if (is_array($decoded[$key])) {
+                                return json_encode($decoded[$key]);
+                            }
+                            return (string)$decoded[$key];
+                        }
+                    }
+                    return json_encode($decoded);
+                }
+                return $message;
+            }
+        }
+
+        if ((int)$report->status_id === 3) {
+            return 'Transaction is pending at provider side.';
+        }
+
+        return 'Failure reason not provided by provider.';
     }
 
 

@@ -22,6 +22,7 @@ use App\Models\Apiresponse;
 use App\Models\Service;
 use App\Models\State;
 use App\Models\Apicommreport;
+use App\Models\Gatewayorder;
 use File;
 use Helpers;
 use App\Models\Sitesetting;
@@ -251,7 +252,7 @@ class ReportController extends Controller
                 "state" => $state_name,
                 "vendor" => $vendor,
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges(' . $value->id . ')"><i class="fas fa-eye"></i> View</button>',
-                "failure_reason" => $value->reason,
+                "failure_reason" => $this->resolveFailureReason($value),
                 'wallet_type' => $wallet_type,
                 'client_id' => $value->client_id,
 
@@ -667,24 +668,107 @@ class ReportController extends Controller
         }
         if (Auth::User()->role_id <= 2) {
             $id = $request->id;
-            if (Apiresponse::where('report_id', $id)->exists()) {
-                $apiresponse = Apiresponse::where('report_id', $id)->get();
+            $report = Report::find($id);
+            if (!$report) {
+                return Response()->json(['status' => 'failure', 'message' => 'Report not found']);
+            }
+            $apiresponse = Apiresponse::where('report_id', $id)->orderBy('id', 'ASC')->get();
+            if ($apiresponse->isEmpty()) {
+                $gatewayOrder = Gatewayorder::where('report_id', $id)
+                    ->orWhere('id', $report->payid)
+                    ->orWhere('client_id', $report->client_id)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+                if ($gatewayOrder) {
+                    $apiresponse = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'ASC')->get();
+                }
+            }
+
+            if ($apiresponse->isNotEmpty()) {
                 $response = array();
                 $i = 1;
                 foreach ($apiresponse as $value) {
                     $product = array();
                     $product["id"] = $i++;
-                    $product["request_message"] = $value->request_message;
-                    $product["response"] = $value->message;
+                    $product["request_message"] = $value->request_message ?: 'Request payload not captured';
+                    $product["response"] = $this->prettifyApiPayload($value->message);
                     array_push($response, $product);
                 }
                 return Response()->json(['status' => 'success', 'logs' => $response]);
-            } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Logs Not Found']);
             }
+
+            return Response()->json(['status' => 'failure', 'message' => 'Logs Not Found']);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);
         }
+    }
+
+    private function resolveFailureReason(Report $report): string
+    {
+        $reason = trim((string)$report->reason);
+        if ($reason !== '') {
+            return $reason;
+        }
+
+        if ((int)$report->status_id === 1) {
+            return '';
+        }
+
+        $txnid = trim((string)$report->txnid);
+        if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
+            if ($txnid !== '' && stripos($txnid, 'UTR') === false) {
+                return $txnid;
+            }
+        }
+
+        $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
+        if (!$latestApi) {
+            $gatewayOrder = Gatewayorder::where('report_id', $report->id)
+                ->orWhere('id', $report->payid)
+                ->orWhere('client_id', $report->client_id)
+                ->orderBy('id', 'DESC')
+                ->first();
+            if ($gatewayOrder) {
+                $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
+            }
+        }
+
+        if ($latestApi) {
+            $apiMessage = trim($this->prettifyApiPayload($latestApi->message));
+            if ($apiMessage !== '') {
+                return $apiMessage;
+            }
+        }
+
+        if ((int)$report->status_id === 3) {
+            return 'Transaction is pending at provider side.';
+        }
+
+        return 'Failure reason not provided by provider.';
+    }
+
+    private function prettifyApiPayload($payload): string
+    {
+        $message = trim((string)$payload);
+        if ($message === '') {
+            return '';
+        }
+
+        $decoded = json_decode($message, true);
+        if (!is_array($decoded)) {
+            return $message;
+        }
+
+        foreach (['message', 'responseMessage', 'error', 'errors', 'status'] as $key) {
+            if (!empty($decoded[$key])) {
+                if (is_array($decoded[$key])) {
+                    return json_encode($decoded[$key]);
+                }
+                return (string)$decoded[$key];
+            }
+        }
+
+        return json_encode($decoded);
     }
 
     function recharge_update_for_refund(Request $request)

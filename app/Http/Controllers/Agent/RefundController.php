@@ -376,7 +376,11 @@ class RefundController extends Controller
         }
 
         $member = Member::where('user_id', $report->user_id)->first();
-        if (!empty($member->call_back_url)) {
+        $payoutCallbackUrl = $member->payoutcallbackurl ?? '';
+        if (empty($payoutCallbackUrl)) {
+            $payoutCallbackUrl = $member->call_back_url ?? '';
+        }
+        if (!empty($payoutCallbackUrl)) {
             $userDetails = User::find($report->user_id);
             if ($userDetails) {
                 $merchantStatus = $statusId === 1 ? 'success' : ($statusId === 2 ? 'failed' : 'pending');
@@ -389,7 +393,7 @@ class RefundController extends Controller
                 ];
                 $signatureString = http_build_query($queryParams);
                 $queryParams['signature'] = hash_hmac('sha256', $signatureString, $userDetails->api_token);
-                $url = $member->call_back_url . '?' . http_build_query($queryParams);
+                $url = $payoutCallbackUrl . '?' . http_build_query($queryParams);
                 try {
                     $response = Helpers::pay_curl_get($url);
                     Traceurl::insertGetId([

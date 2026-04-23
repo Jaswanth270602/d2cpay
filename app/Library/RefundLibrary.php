@@ -45,7 +45,12 @@ namespace App\library {
                 $number = $reports->number;
                 $oldstatus_id = $reports->status_id;
                 $client_id = $reports->client_id;
-                $call_back_url = $reports->user->member->call_back_url;
+                $member = $reports->user->member;
+                $call_back_url = $member->call_back_url ?? '';
+                $payout_call_back_url = $member->payoutcallbackurl ?? '';
+                if ((int)$provider_id === 324 && !empty($payout_call_back_url)) {
+                    $call_back_url = $payout_call_back_url;
+                }
                 $now = new \DateTime();
                 $ctime = $now->format('Y-m-d H:i:s');
                 $api_id = 0;
@@ -260,7 +265,12 @@ namespace App\library {
                 $number = $reports->number;
                 $oldstatus_id = $reports->status_id;
                 $client_id = $reports->client_id;
-                $call_back_url = $reports->user->member->call_back_url;
+                $member = $reports->user->member;
+                $call_back_url = $member->call_back_url ?? '';
+                $payout_call_back_url = $member->payoutcallbackurl ?? '';
+                if ((int)$provider_id === 324 && !empty($payout_call_back_url)) {
+                    $call_back_url = $payout_call_back_url;
+                }
                 $now = new \DateTime();
                 $ctime = $now->format('Y-m-d H:i:s');
                 $api_id = 0;

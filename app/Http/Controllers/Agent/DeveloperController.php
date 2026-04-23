@@ -149,13 +149,21 @@ class DeveloperController extends Controller
         if (Auth::User()->role_id == 10) {
             $rules = array(
                 'call_back_url' => 'required',
+                'payout_call_back_url' => 'required',
             );
             $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return Response()->json(['status' => 'validation_error', 'errors' => $validator->getMessageBag()->toArray()]);
             }
             $call_back_url = $request->call_back_url;
-            Member::where('user_id', Auth::id())->update(['call_back_url' => $call_back_url]);
+            $payout_call_back_url = $request->payout_call_back_url;
+            Member::where('user_id', Auth::id())->update([
+                'call_back_url' => $call_back_url,
+                'payoutcallbackurl' => $payout_call_back_url,
+            ]);
+            User::where('id', Auth::id())->update([
+                'payoutcallbackurl' => $payout_call_back_url,
+            ]);
             return Response()->json(['status' => 'success', 'message' => 'Call Back Url Successfully Updated']);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);

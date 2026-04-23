@@ -87,7 +87,8 @@
             $(".loader").show();
             var token = $("input[name=_token]").val();
             var call_back_url = $("#call_back_url").val();
-            var dataString = 'call_back_url=' + encodeURIComponent(call_back_url) +  '&_token=' + token;
+            var payout_call_back_url = $("#payout_call_back_url").val();
+            var dataString = 'call_back_url=' + encodeURIComponent(call_back_url) + '&payout_call_back_url=' + encodeURIComponent(payout_call_back_url) + '&_token=' + token;
             $.ajax({
                 type: "POST",
                 url: "{{url('agent/developer/update-call-back-url')}}",
@@ -98,7 +99,33 @@
                         swal("Success", msg.message, "success");
                         setTimeout(function () { location.reload(1); }, 2000);
                     } else if(msg.status == 'validation_error'){
-                        $("#call_back_url_errors").text(msg.errors.call_back_url);
+                        $("#call_back_url_errors").text(msg.errors.call_back_url || '');
+                        $("#payout_call_back_url_errors").text(msg.errors.payout_call_back_url || '');
+                    }else{
+                        swal("Failed", msg.message, "error");
+                    }
+                }
+            });
+        }
+
+        function update_payout_call_back() {
+            $(".loader").show();
+            var token = $("input[name=_token]").val();
+            var call_back_url = $("#call_back_url").val();
+            var payout_call_back_url = $("#payout_call_back_url").val();
+            var dataString = 'call_back_url=' + encodeURIComponent(call_back_url) + '&payout_call_back_url=' + encodeURIComponent(payout_call_back_url) + '&_token=' + token;
+            $.ajax({
+                type: "POST",
+                url: "{{url('agent/developer/update-call-back-url')}}",
+                data: dataString,
+                success: function (msg) {
+                    $(".loader").hide();
+                    if (msg.status == 'success') {
+                        swal("Success", msg.message, "success");
+                        setTimeout(function () { location.reload(1); }, 2000);
+                    } else if(msg.status == 'validation_error'){
+                        $("#call_back_url_errors").text(msg.errors.call_back_url || '');
+                        $("#payout_call_back_url_errors").text(msg.errors.payout_call_back_url || '');
                     }else{
                         swal("Failed", msg.message, "error");
                     }
@@ -221,16 +248,26 @@
                                 <p><small class="text-muted"> ie : 123.45.6.789 or dynamic </small></p>
                             </div>
                             <div class="col-12">
-                                <div class="text-bold-600 font-medium-2 ">Callback Url
+                                <div class="text-bold-600 font-medium-2 ">Payin Callback Url
                                     <i class="step-icon feather icon-alert-circle" style="float: center;font-size: 18px;color: blue;" data-toggle="popover" data-html="true" data-placement="top" data-container="body" data-original-title="Supported Parameters" data-content="<b>[number]</b> - Recharge Number <span class='rr'></span> <br> <b>[amount] </b>- Recharge Amount <span class='rr'></span><br> <b>[status]</b> - Transaction Status <span class='rr'></span><br> <b>[opid]</b> - Operator TxnID <br> <b>[txnid]</b> - Transaction ID<br> <b>[client_id]</b> - Your TxnID <br> <b>[response_code]</b> - Response Code <br> <b>[response_msg]</b> - Response Message" aria-describedby="popover427601"></i>
                                 </div><div class="input-group">
-                                    <input type="text" class="form-control" id="call_back_url" name="call_back_url" value="{{Auth::User()->member->call_back_url }}" placeholder="Callback Url" aria-describedby="button-url">
+                                    <input type="text" class="form-control" id="call_back_url" name="call_back_url" value="{{Auth::User()->member->call_back_url }}" placeholder="Payin Callback Url" aria-describedby="button-url">
                                     <div class="input-group-append" id="button-url">
                                         <button class="btn btn-danger waves-effect waves-light saveurl" type="button" onclick="update_call_back()">Save URL</button>
                                     </div>
                                 </div>
                                 <ul class="parsley-errors-list filled">
                                     <li class="parsley-required" id="call_back_url_errors"></li>
+                                </ul>
+                                <div class="text-bold-600 font-medium-2 mt-3">Payout Callback Url</div>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="payout_call_back_url" name="payout_call_back_url" value="{{ Auth::User()->member->payoutcallbackurl ?? '' }}" placeholder="Payout Callback Url" aria-describedby="button-url">
+                                    <div class="input-group-append" id="button-payout-url">
+                                        <button class="btn btn-primary waves-effect waves-light saveurl" type="button" onclick="update_payout_call_back()">Save Payout URL</button>
+                                    </div>
+                                </div>
+                                <ul class="parsley-errors-list filled">
+                                    <li class="parsley-required" id="payout_call_back_url_errors"></li>
                                 </ul>
 
                                 <p><small class="text-muted">Leave Empty to Cancel Callback ! ,  Url must start with http and should get HTTP 200 Response.</small></p>

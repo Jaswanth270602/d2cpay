@@ -212,6 +212,7 @@ namespace App\library {
                 'shop_name' => Auth::User()->member->shop_name,
                 'office_address' => Auth::User()->member->office_address,
                 'call_back_url' => Auth::User()->member->call_back_url,
+                'payoutcallbackurl' => Auth::User()->member->payoutcallbackurl ?? '',
                 'profile_photo' => Auth::User()->member->profile_photo == '' ? '' : $this->cdnLink . '' . Auth::User()->member->profile_photo,
                 'shop_photo' => Auth::User()->member->shop_photo == '' ? '' : $this->cdnLink . '' . Auth::User()->member->shop_photo,
                 'gst_regisration_photo' => Auth::User()->member->gst_regisration_photo == '' ? '' : $this->cdnLink . '' . Auth::User()->member->gst_regisration_photo,

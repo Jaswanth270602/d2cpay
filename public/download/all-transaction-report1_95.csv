@@ -1,0 +1,31 @@
+"Report Id",Date,User,Provider,Number,Txnid,"Opening Balance",Amount,Profit,"Closing Balance",Mode,"Ip Address",Wallet,Status,Vendor
+122,"2026-04-17 20:01:08","Rajesh reddy",Payout,067601002124,610725088388,109,102,-0,7,WEB,127.0.0.1,Payout,Success,ZigPay
+121,"2026-04-17 19:48:29","Rajesh reddy",Payout,067601002124,,210,101,-0,109,WEB,127.0.0.1,Payout,Pending,ZigPay
+118,"2026-04-17 19:45:03","Rajesh reddy","Payin 8",7076373992,300952061377,1,150,-0,151,WEB,127.0.0.1,Payin,Credit,ZigPay
+117,"2026-04-17 19:34:39","Rajesh reddy",Payout,067601002124,"IP address not authorized.",60,55,-0,60,WEB,127.0.0.1,Payout,Failed,ZigPay
+116,"2026-04-17 15:09:13","Rajesh reddy",Payout,067601002124,,164,104,-0,60,WEB,127.0.0.1,Payout,Pending,ZigPay
+115,"2026-04-17 15:02:31","Rajesh reddy",Payout,067601002124,"IP address not authorized.",164,103,-0,164,WEB,127.0.0.1,Payout,Failed,ZigPay
+114,"2026-04-17 14:55:15","Rajesh reddy",Payout,067601002124,,265,101,-0,164,WEB,127.0.0.1,Payout,Pending,ZigPay
+113,"2026-04-17 14:45:21","Rajesh reddy",Payout,067601002124,,365,100,-0,265,WEB,127.0.0.1,Payout,Pending,ZigPay
+112,"2026-04-17 14:35:45","Rajesh reddy",Payout,067601002124,,483,118,-0,365,WEB,127.0.0.1,Payout,Pending,ZigPay
+111,"2026-04-17 14:32:47","Rajesh reddy",Payout,067601002124,"IP address not authorized.",483,120,-0,483,WEB,127.0.0.1,Payout,Failed,ZigPay
+110,"2026-04-17 14:30:12","Rajesh reddy",Payout,067601002124,"IP address not authorized.",483,106,-0,483,WEB,127.0.0.1,Payout,Failed,ZigPay
+105,"2026-04-17 14:01:05","Rajesh reddy","Payin 8",7076373992,300929060070,308,105,-0,413,WEB,127.0.0.1,Payin,Credit,ZigPay
+104,"2026-04-17 12:56:35","Rajesh reddy",Payout,067601002124,,176,105,-0,71,WEB,127.0.0.1,Payout,Pending,ZigPay
+103,"2026-04-17 12:29:58","Rajesh reddy",Payout,067601002124,,296,120,-0,176,WEB,127.0.0.1,Payout,Pending,ZigPay
+102,"2026-04-17 12:26:13","Rajesh reddy",Payout,067601002124,"IP address not authorized.",296,110,-0,296,WEB,127.0.0.1,Payout,Failed,ZigPay
+101,"2026-04-17 12:19:46","Rajesh reddy",Payout,067601002124,"IP address not authorized.",296,109,-0,296,APP,127.0.0.1,Payout,Failed,ZigPay
+100,"2026-04-17 11:17:48","Rajesh reddy",Payout,067601002124,,396,100,-0,296,WEB,127.0.0.1,Payout,Pending,ZigPay
+99,"2026-04-17 11:13:39","Rajesh reddy",Payout,31594359824,"Transaction failed",396,100,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+98,"2026-04-17 11:02:01","Rajesh reddy",Payout,067601002124,"Transaction failed",396,100,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+97,"2026-04-17 10:53:44","Rajesh reddy","Payin 8",7076373992,602921482968,207,101,-0,308,WEB,127.0.0.1,Payin,Credit,ZigPay
+96,"2026-04-16 23:16:06","Rajesh reddy",Payout,067601002124,"Your provider is not set.Please contact support.",396,100,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+95,"2026-04-16 23:09:33","Rajesh reddy",Payout,067601002124,"Your provider is not set.Please contact support.",396,118,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+94,"2026-04-16 23:09:12","Rajesh reddy",Payout,067601002124,"Your provider is not set.Please contact support.",396,100,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+93,"2026-04-16 22:56:59","Rajesh reddy",Payout,067601002124,"Client_RefNo must be between 15 and 35 characters long.",396,109,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+92,"2026-04-16 22:49:50","Rajesh reddy",Payout,067601002124,"IP address not authorized.",396,130,-0,396,WEB,127.0.0.1,Payout,Failed,ZigPay
+91,"2026-04-16 22:43:25","Rajesh reddy",Payout,067601002124,"Authentication failed",396,120,-0,396,WEB,127.0.0.1,Payout,Failed,Safeppay
+90,"2026-04-16 22:30:26","Rajesh reddy",Payout,067601002124,"Authentication failed",396,150,-0,396,WEB,127.0.0.1,Payout,Failed,Safeppay
+89,"2026-04-16 22:25:17","Rajesh reddy",Payout,067601002124,"Authentication failed",396,100,-0,396,WEB,127.0.0.1,Payout,Failed,Safeppay
+88,"2026-04-16 22:02:49","Rajesh reddy","Payin 8",7076373992,204162689734,106,101,-0,207,WEB,127.0.0.1,Payin,Credit,ZigPay
+87,"2026-04-16 01:00:16","Rajesh reddy","Payin 8",7076373992,602849931361,2,104,-0,106,WEB,127.0.0.1,Payin,Credit,ZigPay

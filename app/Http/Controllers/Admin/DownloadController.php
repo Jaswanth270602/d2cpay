@@ -156,15 +156,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/' . $services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget($services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Account Number', 'Remiter Number', 'Beneficiary Name', 'Bank Name', 'UTR Number', 'Amount', 'Charges', 'Type', 'Mode', 'Ip Address', 'Wallet', 'Status'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -207,15 +206,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/' . $services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget($services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Aadhar Number', 'Status'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -268,15 +266,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/' . $services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget($services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Vendor'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -344,15 +341,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [, $filepath, $path] = $this->prepareDownloadTarget('all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Vendor'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -397,15 +393,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/pending-report' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget('pending-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Vendor'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -435,15 +430,14 @@ class DownloadController extends Controller
                 array_push($arr, $data);
             }
             $delimiter = ",";
-            $filename = 'download/api-profit-loss-report' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-            $fp = fopen($filename, 'w+');
+            [$filename, $filepath, $path] = $this->prepareDownloadTarget('api-profit-loss-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+            $fp = fopen($filepath, 'w+');
             $col = ['Api Name', 'Amount', 'Api Charges', 'Api Commission', 'Our Charges', 'Our Commission', 'Net Profit'];
             fputcsv($fp, $col, $delimiter);
             foreach ($arr as $line) {
                 fputcsv($fp, $line, $delimiter);
             }
             fclose($fp);
-            $path = url('') . '/' . $filename;
             return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);
@@ -483,15 +477,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/debit_report_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget('debit_report_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Transfer To', 'Provider', 'Number', 'Txnid', 'Amount', 'Balance', 'Status'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -528,15 +521,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/credit_report_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget('credit_report_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Transfer By', 'Provider', 'Number', 'Txnid', 'Amount', 'Balance', 'Status'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -599,8 +591,8 @@ class DownloadController extends Controller
                     array_push($arr, $data);
                 }
                 $delimiter = ",";
-                $filename = 'download/' . $menu_name . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-                $fp = fopen($filename, 'w+');
+                [$filename, $filepath, $path] = $this->prepareDownloadTarget($menu_name . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+                $fp = fopen($filepath, 'w+');
                 $col = ['User Id', 'Joining Date', 'First Name', 'Last Name', 'Mobile', 'Email Id', 'Shop Name', 'Member Type', 'Normal Balance', 'Aeps Balance', 'Parent Name', 'Address', 'City', 'State', 'Pincode', 'Office Address', 'Recharge', 'Money', 'Aeps', 'Payout', 'Pancard', 'Giftcard'];
 
                 fputcsv($fp, $col, $delimiter);
@@ -608,7 +600,6 @@ class DownloadController extends Controller
                     fputcsv($fp, $line, $delimiter);
                 }
                 fclose($fp);
-                $path = url('') . '/' . $filename;
                 return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
 
             } else {
@@ -659,8 +650,8 @@ class DownloadController extends Controller
                 array_push($arr, $data);
             }
             $delimiter = ",";
-            $filename = 'download/' . $menu_name . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-            $fp = fopen($filename, 'w+');
+            [$filename, $filepath, $path] = $this->prepareDownloadTarget($menu_name . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+            $fp = fopen($filepath, 'w+');
             $col = ['Id', 'User', 'Request Date', 'Payment Date', 'Bank', 'Method', 'Amount', 'UTR', 'Payment Type', 'Status'];
 
             fputcsv($fp, $col, $delimiter);
@@ -668,7 +659,6 @@ class DownloadController extends Controller
                 fputcsv($fp, $line, $delimiter);
             }
             fclose($fp);
-            $path = url('') . '/' . $filename;
             return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
 
         } else {
@@ -722,8 +712,8 @@ class DownloadController extends Controller
                     array_push($arr, $data);
                 }
                 $delimiter = ",";
-                $filename = 'download/outlet_list_' . mt_rand(10, 99) . '.csv';
-                $fp = fopen($filename, 'w+');
+                [$filename, $filepath, $path] = $this->prepareDownloadTarget('outlet_list_' . mt_rand(10, 99) . '.csv');
+                $fp = fopen($filepath, 'w+');
                 $col = ['ID', 'Date Time', 'User Name', 'First Name', 'Last Name', 'Mobile Number', 'Email', 'Aadhar Number', 'Pan Number', 'Shop Name', 'Pin Code', 'Address', 'Account Number', 'IFSC Code', 'State Name', 'District Name', 'City', 'Status'];
 
                 fputcsv($fp, $col, $delimiter);
@@ -731,7 +721,6 @@ class DownloadController extends Controller
                     fputcsv($fp, $line, $delimiter);
                 }
                 fclose($fp);
-                $path = url('') . '/' . $filename;
                 return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
             } else {
                 return Response()->json(['status' => 'failure', 'message' => 'password does not match']);
@@ -783,15 +772,14 @@ class DownloadController extends Controller
             array_push($arr, $data);
         }
         $delimiter = ",";
-        $filename = 'download/all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv';
-        $fp = fopen($filename, 'w+');
+        [$filename, $filepath, $path] = $this->prepareDownloadTarget('all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
+        $fp = fopen($filepath, 'w+');
         $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Vendor'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
-        $path = url('') . '/' . $filename;
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
     }
 
@@ -818,15 +806,14 @@ class DownloadController extends Controller
                 array_push($arr, $data);
             }
             $delimiter = ",";
-            $filename = 'download/purchase_balance_' . mt_rand(10, 99) . '.csv';
-            $fp = fopen($filename, 'w+');
+            [$filename, $filepath, $path] = $this->prepareDownloadTarget('purchase_balance_' . mt_rand(10, 99) . '.csv');
+            $fp = fopen($filepath, 'w+');
             $col = ['ID', 'Date', 'User Name', 'Api Name', 'Bank Name', 'Amount', 'UTR', 'Purchase Type', 'Status'];
             fputcsv($fp, $col, $delimiter);
             foreach ($arr as $line) {
                 fputcsv($fp, $line, $delimiter);
             }
             fclose($fp);
-            $path = url('') . '/' . $filename;
             return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
         } else {
             return Response()->json(['status' => 'failure', 'message' => 'Sorry not permission']);
@@ -835,7 +822,25 @@ class DownloadController extends Controller
 
     function delete_all_file()
     {
-        $destinationPath = 'download';
+        $destinationPath = public_path('download');
+        if (!File::exists($destinationPath)) {
+            File::makeDirectory($destinationPath, 0755, true);
+            return;
+        }
         File::cleanDirectory($destinationPath);
+    }
+
+    private function prepareDownloadTarget(string $name): array
+    {
+        $destinationPath = public_path('download');
+        if (!File::exists($destinationPath)) {
+            File::makeDirectory($destinationPath, 0755, true);
+        }
+
+        $filename = 'download/' . $name;
+        $filepath = public_path($filename);
+        $url = url($filename);
+
+        return [$filename, $filepath, $url];
     }
 }
