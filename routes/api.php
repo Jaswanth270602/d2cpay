@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('call-back')->group(function () {
+    Route::any('/generic', [App\Http\Controllers\GenericCallbackController::class, 'receive']);
     Route::post('/merchant-pay2all', [App\Http\Controllers\Agent\RefundController::class, 'merchant_pay2all']);
     Route::post('/smart-outlet', [App\Http\Controllers\Agent\SmartoutletController::class, 'smart_outlet']);
     Route::get('/recharge-response/{id}', [App\Http\Controllers\Agent\RefundController::class, 'dynamic_response']);
