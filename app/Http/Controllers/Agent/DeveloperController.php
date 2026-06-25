@@ -483,4 +483,10 @@ class DeveloperController extends Controller
         return view('agent.developer.payinEightDocs')->with($data);
     }
 
+    function payinNineDocs()
+    {
+        $data = array('page_title' => 'Payin 9 Docs');
+        return view('agent.developer.payinNineDocs')->with($data);
+    }
+
 }

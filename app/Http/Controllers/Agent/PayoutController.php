@@ -34,6 +34,7 @@ use App\Library\PunjikendraLibrary;
 use App\Library\VtransactLibrary;
 use App\Library\SafepPayLibrary;
 use App\Library\ZigPayLibrary;
+use App\Library\QuickPayCashLibrary;
 use DB;
 
 //dmt service
@@ -708,6 +709,9 @@ class PayoutController extends Controller
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }elseif ($api_id == 15){
             $library = new ZigPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
+        }elseif ($api_id == 16){
+            $library = new QuickPayCashLibrary();
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];

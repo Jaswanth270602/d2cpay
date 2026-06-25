@@ -57,6 +57,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'qpc_public_url' => env('QPC_PUBLIC_URL', ''),
+
     'asset_url' => env('ASSET_URL'),
 
     /*

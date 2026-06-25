@@ -680,6 +680,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payin-five-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinfiveDocs']);
             Route::get('/payin-seven-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinSevenDocs']);
             Route::get('/payin-eight-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinEightDocs']);
+            Route::get('/payin-nine-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinNineDocs']);
 
         });
 
@@ -799,6 +800,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/create-order', [App\Http\Controllers\Agent\ZigPayController::class, 'createOrderWeb']);
             Route::post('/order-status', [App\Http\Controllers\Agent\ZigPayController::class, 'webOrderStatus']);
             Route::get('/view-qrcode', [App\Http\Controllers\Agent\ZigPayController::class, 'viewQrcode']);
+        });
+
+        Route::group(['prefix' => 'add-money/v9', 'middleware' => 'auth'], function () {
+            Route::get('/welcome', [App\Http\Controllers\Agent\QuickPayCashController::class, 'welcome']);
+            Route::post('/create-order', [App\Http\Controllers\Agent\QuickPayCashController::class, 'createOrderWeb']);
+            Route::post('/order-status', [App\Http\Controllers\Agent\QuickPayCashController::class, 'webOrderStatus']);
+            Route::get('/view-qrcode', [App\Http\Controllers\Agent\QuickPayCashController::class, 'viewQrcode']);
         });
 
 

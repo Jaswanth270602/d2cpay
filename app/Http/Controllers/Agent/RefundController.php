@@ -24,6 +24,7 @@ use App\Models\Api;
 use App\Models\Member;
 use App\Models\Traceurl;
 use Helpers;
+use App\Library\QuickPayCashLibrary;
 use Illuminate\Support\Facades\Log;
 
 
@@ -410,6 +411,116 @@ class RefundController extends Controller
         }
 
         return response()->json(['status' => true, 'message' => 'Callback processed successfully']);
+    }
+
+    public function qpcPayout(Request $request)
+    {
+        $ctime = now();
+        $payload = QuickPayCashLibrary::parseIncomingCallback($request);
+        $audit = QuickPayCashLibrary::buildCallbackAudit($request, $payload);
+
+        Log::info('QPC payout callback received', $audit);
+
+        Apiresponse::insertGetId([
+            'message' => json_encode($audit),
+            'api_type' => 16,
+            'response_type' => 'call_back',
+            'request_message' => substr((string)$request->getContent(), 0, 65000),
+            'ip_address' => $request->ip(),
+            'created_at' => $ctime,
+        ]);
+
+        if (QuickPayCashLibrary::isEffectivelyEmptyPayload($payload)) {
+            return response()->json([
+                'received' => true,
+                'status' => true,
+                'message' => 'Empty callback acknowledged',
+            ]);
+        }
+
+        $library = new QuickPayCashLibrary();
+        $receivedSignature = (string)($payload['signature'] ?? '');
+        if ($receivedSignature === '' || !$library->verifyPayoutCallback($payload, $receivedSignature)) {
+            Log::error('QPC payout callback: invalid signature', ['payload' => $payload]);
+            return response()->json([
+                'received' => false,
+                'status' => false,
+                'message' => 'Invalid signature',
+            ], 400);
+        }
+
+        $statusRaw = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+        if (in_array($statusRaw, ['SUCCESS'], true)) {
+            $statusId = 1;
+        } elseif (in_array($statusRaw, ['FAILED', 'CANCELLED'], true)) {
+            $statusId = 2;
+        } else {
+            $statusId = 3;
+        }
+
+        $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
+        $utr = (string)($payload['utr'] ?? '');
+        $amount = (float)($payload['amount'] ?? $payload['payAmount'] ?? 0);
+
+        $report = null;
+        if ($merchantOrderNo !== '') {
+            $report = Report::where('payid', $merchantOrderNo)->orderBy('id', 'DESC')->first();
+        }
+        if (!$report && $merchantOrderNo !== '' && preg_match('/^QPO\d{6}(\d{11})$/', $merchantOrderNo, $matches)) {
+            $report = Report::find((int)$matches[1]);
+        }
+
+        if (!$report) {
+            return response()->json(['status' => false, 'message' => 'Report not found'], 404);
+        }
+
+        $mode = 'Call-back';
+        $refundLibrary = new RefundLibrary();
+        if ($report->wallet_type == 1) {
+            $refundLibrary->update_transaction($statusId, $utr ?: ($payload['message'] ?? ''), $report->id, $mode);
+        } elseif ($report->wallet_type == 2) {
+            $refundLibrary->update_transaction_aeps($statusId, $utr ?: ($payload['message'] ?? ''), $report->id, $mode);
+        }
+
+        $member = Member::where('user_id', $report->user_id)->first();
+        $payoutCallbackUrl = $member->payoutcallbackurl ?? '';
+        if (empty($payoutCallbackUrl)) {
+            $payoutCallbackUrl = $member->call_back_url ?? '';
+        }
+        if (!empty($payoutCallbackUrl)) {
+            $userDetails = User::find($report->user_id);
+            if ($userDetails) {
+                $merchantStatus = $statusId === 1 ? 'success' : ($statusId === 2 ? 'failed' : 'pending');
+                $queryParams = [
+                    'status' => $merchantStatus,
+                    'client_id' => $report->client_id ?: $report->id,
+                    'amount' => $amount > 0 ? $amount : (float)$report->amount,
+                    'utr' => $utr,
+                    'txnid' => $report->id,
+                ];
+                $signatureString = http_build_query($queryParams);
+                $queryParams['signature'] = hash_hmac('sha256', $signatureString, $userDetails->api_token);
+                $url = $payoutCallbackUrl . '?' . http_build_query($queryParams);
+                try {
+                    $response = Helpers::pay_curl_get($url);
+                    Traceurl::insertGetId([
+                        'user_id' => $report->user_id,
+                        'url' => $url,
+                        'number' => $userDetails->mobile ?? '',
+                        'response_message' => $response,
+                        'created_at' => $ctime,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('QPC payout callback forward failed', ['error' => $e->getMessage(), 'report_id' => $report->id]);
+                }
+            }
+        }
+
+        return response()->json([
+            'received' => true,
+            'status' => true,
+            'message' => 'Callback processed successfully',
+        ]);
     }
     
     public function safepPayout(Request $request)

@@ -434,6 +434,7 @@
                                             <option value="12" @if($payout_route == 12) selected @endif>Vtransact</option>
                                             <option value="14" @if($payout_route == 14) selected @endif>SafepPay</option>
                                             <option value="15" @if($payout_route == 15) selected @endif>ZigPay</option>
+                                            <option value="16" @if($payout_route == 16) selected @endif>Quick Pay Cash</option>
                                         </select>
                                         <ul class="parsley-errors-list filled">
                                             <li class="parsley-required" id="payout_route_errors"></li>

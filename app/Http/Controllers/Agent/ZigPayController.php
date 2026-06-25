@@ -55,6 +55,66 @@ class ZigPayController extends Controller
         $this->max_amount = isset($provider->max_amount) ? $provider->max_amount : 50000;
     }
 
+    private function zigpayRequest(string $url, array $headers, string $body): array
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_TIMEOUT => 60,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        return [
+            'body' => $response === false ? '' : $response,
+            'http_code' => $httpCode,
+            'error' => $curlError,
+        ];
+    }
+
+    private function logZigpayResponse(string $message, string $requestMessage = ''): void
+    {
+        Apiresponse::insertGetId([
+            'message' => $message,
+            'api_type' => $this->api_id,
+            'request_message' => $requestMessage,
+            'created_at' => now(),
+            'ip_address' => request()->ip(),
+        ]);
+    }
+
+    private function zigpayFailureMessage(array $result, string $action): string
+    {
+        if (!empty($result['error'])) {
+            return 'Unable to reach ZigPay (' . $action . '): ' . $result['error'];
+        }
+
+        $httpCode = (int)($result['http_code'] ?? 0);
+        $body = trim((string)($result['body'] ?? ''));
+        $decoded = json_decode($body, true);
+
+        if (is_array($decoded)) {
+            return (string)($decoded['message'] ?? $decoded['responseMessage'] ?? 'ZigPay ' . $action . ' failed.');
+        }
+
+        if ($httpCode >= 500) {
+            return 'ZigPay payin service error (HTTP ' . $httpCode . '). Verify Payin is enabled for MID ' . $this->mid . ' and contact ZigPay support.';
+        }
+
+        if ($body !== '') {
+            return 'Invalid response from ZigPay during ' . $action . '.';
+        }
+
+        return 'Empty response from ZigPay during ' . $action . '. Please verify Payin is enabled for MID ' . $this->mid . '.';
+    }
+
     private function generateToken()
     {
         if (empty($this->mid) || empty($this->email) || empty($this->secretkey)) {
@@ -78,17 +138,15 @@ class ZigPayController extends Controller
         ];
 
         Log::info('ZigPay generateToken: requesting token', ['url' => $url]);
-        $response = Helpers::pay_curl_post($url, $header, json_encode($parameters), 'POST');
-        Apiresponse::insertGetId([
-            'message' => $response,
-            'api_type' => 1,
-            'created_at' => now(),
-            'ip_address' => request()->ip(),
-        ]);
+        $result = $this->zigpayRequest($url, $header, json_encode($parameters));
+        $this->logZigpayResponse($result['body'], $url);
 
-        $res = json_decode($response, true);
-        $token = $res['token'] ?? '';
-        Log::info('ZigPay generateToken: result', ['token_received' => !empty($token)]);
+        $res = json_decode($result['body'], true);
+        $token = is_array($res) ? (string)($res['token'] ?? '') : '';
+        Log::info('ZigPay generateToken: result', [
+            'token_received' => $token !== '',
+            'http_code' => $result['http_code'],
+        ]);
         return $token;
     }
 
@@ -159,15 +217,27 @@ class ZigPayController extends Controller
             return response()->json(['status' => 'failure', 'message' => $validator->messages()->first()]);
         }
 
+        $user = Auth::user();
+        $name = trim((string)$user->name);
+        $email = trim((string)$user->email);
+        $mobile = preg_replace('/\D/', '', (string)$user->mobile);
+
+        if ($name === '' || $email === '' || strlen($mobile) !== 10) {
+            return response()->json([
+                'status' => 'failure',
+                'message' => 'Please update your profile with valid name, email, and 10-digit mobile number before generating QR.',
+            ]);
+        }
+
         return $this->createOrderMiddle(
             $request->amount,
             Auth::id(),
             'WEB',
             '',
             '',
-            Auth::user()->name,
-            Auth::user()->email,
-            Auth::user()->mobile
+            $name,
+            $email,
+            $mobile
         );
     }
 
@@ -270,23 +340,26 @@ class ZigPayController extends Controller
             'mode' => $mode,
         ]);
 
-        $response = Helpers::pay_curl_post($url, $header, json_encode($payload), 'POST');
-        Apiresponse::insertGetId([
-            'message' => $response,
-            'api_type' => 1,
-            'created_at' => now(),
-            'ip_address' => request()->ip(),
-        ]);
+        $result = $this->zigpayRequest($url, $header, json_encode($payload));
+        $this->logZigpayResponse($result['body'], $url . '?' . json_encode($payload));
 
-        $res = json_decode($response, true);
+        $res = json_decode($result['body'], true);
         Log::info('ZigPay createOrder: raw response', [
             'gateway_order_id' => $gatewayOrderId,
             'response' => $res,
+            'http_code' => $result['http_code'],
         ]);
 
         if (!is_array($res)) {
-            Log::error('ZigPay createOrder: non-array response', ['raw' => $response]);
-            return response()->json(['status' => 'failure', 'message' => 'Invalid response from ZigPay']);
+            Log::error('ZigPay createOrder: non-array response', [
+                'raw' => $result['body'],
+                'http_code' => $result['http_code'],
+                'curl_error' => $result['error'],
+            ]);
+            return response()->json([
+                'status' => 'failure',
+                'message' => $this->zigpayFailureMessage($result, 'create order'),
+            ]);
         }
 
         $providerMessage = (string)($res['message'] ?? $res['responseMessage'] ?? '');
