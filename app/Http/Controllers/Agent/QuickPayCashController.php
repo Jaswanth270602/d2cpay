@@ -429,7 +429,7 @@ class QuickPayCashController extends Controller
         }
 
         if (empty($this->merchantId) || empty($this->merchantKey)) {
-            return response()->json(['status' => 'failure', 'message' => 'QPC credentials not configured']);
+            return response()->json(['status' => 'failure', 'message' => ' credentials not configured']);
         }
 
         $ctime = now();

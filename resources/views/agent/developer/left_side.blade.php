@@ -22,7 +22,7 @@
                     <!-- <a class="nav-link {{(Request::is('*payin-five-1-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-five-1-docs')}}">Payin 5.1</a> -->
                     <!-- <a class="nav-link {{(Request::is('*payin-six-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-six-docs')}}">Payin 6</a> -->
                     <!-- <a class="nav-link {{(Request::is('*payin-seven-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-seven-docs')}}">Payin 7</a> -->
-                    <a class="nav-link {{(Request::is('*payin-eight-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-eight-docs')}}">Payin 8</a>
+                    <!-- <a class="nav-link {{(Request::is('*payin-eight-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-eight-docs')}}">Payin 8</a> -->
                     <a class="nav-link {{(Request::is('*payin-nine-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-nine-docs')}}">Payin 9</a>
                     <input type="hidden" id="BiometricData">
                 </nav>
