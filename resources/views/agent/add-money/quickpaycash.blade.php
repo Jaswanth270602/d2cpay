@@ -300,25 +300,34 @@
         toggleBtn();
     }
 
+    function closeQpcModalAndGoHome() {
+        stopqpcPolling();
+        qpcCurrentTxnid = null;
+        $('#view-qrcode-model').modal('hide');
+        window.location.href = "{{ url('agent/dashboard') }}";
+    }
+
     function showqpcSuccess(data) {
         stopqpcPolling();
-        disableQpcQr('<i class="fa fa-check-circle"></i> Payment received — QR disabled');
+        disableQpcQr('<i class="fa fa-check-circle"></i> Payment received — redirecting…');
         $('#qpc-modal-title').text('Payment successful');
         $('#qpc-result-failure').hide();
         $('#qpc-result-timeout').hide();
         var utr = (data && data.utr) ? data.utr : '';
         $('#qpc-success-utr').text(utr ? ('UTR / ref: ' + utr) : '');
         $('#qpc-result-success').show();
+        setTimeout(closeQpcModalAndGoHome, 1500);
     }
 
     function showqpcFailure(message) {
         stopqpcPolling();
-        disableQpcQr('<i class="fa fa-times-circle"></i> Payment failed — QR disabled');
+        disableQpcQr('<i class="fa fa-times-circle"></i> Payment failed — redirecting…');
         $('#qpc-modal-title').text('Payment failed');
         $('#qpc-result-success').hide();
         $('#qpc-result-timeout').hide();
         $('#qpc-failure-msg').text(message || 'Payment could not be completed.');
         $('#qpc-result-failure').show();
+        setTimeout(closeQpcModalAndGoHome, 1500);
     }
 
     function showqpcTimeout() {
