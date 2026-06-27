@@ -36,8 +36,8 @@ class TransferController extends Controller
         $sitesettings = Sitesetting::where('company_id', $this->company_id)->first();
         $this->brand_name = (empty($sitesettings)) ? '' : $sitesettings->brand_name;
         $this->provider_id = 326;
-        $this->min_amount = 10;
-        $this->max_amount = 1000000;
+        $this->min_amount = 100;
+        $this->max_amount = 10000000;
     }
 
 
