@@ -710,7 +710,7 @@ class ReportController extends Controller
             return $reason;
         }
 
-        if ((int)$report->status_id === 1) {
+        if (in_array((int)$report->status_id, [1, 6], true)) {
             return '';
         }
 
