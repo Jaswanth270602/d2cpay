@@ -40,18 +40,28 @@ class AppServiceProvider extends ServiceProvider
         ])));
 
         $company = null;
-        if (!empty($candidates)) {
-            $company = Company::whereIn('company_website', $candidates)
-                ->where('status_id', 1)
-                ->first();
-        }
+        $sitesettings = null;
 
-        if (empty($company)) {
-            $company = Company::where('status_id', 1)->first();
+        try {
+            if (!empty($candidates)) {
+                $company = Company::whereIn('company_website', $candidates)
+                    ->where('status_id', 1)
+                    ->first();
+            }
+
+            if (empty($company)) {
+                $company = Company::where('status_id', 1)->first();
+            }
+
+            if (!empty($company)) {
+                $sitesettings = Sitesetting::where('company_id', $company->id)->first();
+            }
+        } catch (\Throwable $e) {
+            $company = null;
+            $sitesettings = null;
         }
 
         if (!empty($company)) {
-            $sitesettings = Sitesetting::where('company_id', $company->id)->first();
             View::share('company_id', $company->id);
             View::share('company_name', $company->company_name);
             View::share('company_email', $company->company_email);

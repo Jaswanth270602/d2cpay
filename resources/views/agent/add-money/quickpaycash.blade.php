@@ -234,6 +234,7 @@
                     <strong>Payment successful</strong>
                     <p class="mb-0 mt-2">Your wallet will update shortly.</p>
                     <p class="mb-0 mt-1 small" id="qpc-success-utr"></p>
+                    <button class="btn-neon mt-3" onclick="closeQpcModalAndGoHome()">OK</button>
                 </div>
                 <div id="qpc-result-failure" style="display:none;">
                     <strong>Payment failed</strong>
@@ -307,17 +308,19 @@
         window.location.href = "{{ url('agent/dashboard') }}";
     }
 
+    
     function showqpcSuccess(data) {
         stopqpcPolling();
-        disableQpcQr('<i class="fa fa-check-circle"></i> Payment received — redirecting…');
-        $('#qpc-modal-title').text('Payment successful');
+        disableQpcQr('<i class="fa fa-check-circle"></i> Payment received!');
+        $('#qpc-modal-title').text('Payment Successful');
         $('#qpc-result-failure').hide();
         $('#qpc-result-timeout').hide();
         var utr = (data && data.utr) ? data.utr : '';
         $('#qpc-success-utr').text(utr ? ('UTR / ref: ' + utr) : '');
         $('#qpc-result-success').show();
-        setTimeout(closeQpcModalAndGoHome, 1500);
+        // Removed setTimeout — user clicks OK to redirect
     }
+
 
     function showqpcFailure(message) {
         stopqpcPolling();
