@@ -741,7 +741,7 @@ class ReportController extends Controller
         }
 
         if ((int)$report->status_id === 3) {
-            return 'Transaction is pending at provider side.';
+            return 'still pending - will update soon';
         }
 
         return 'Failure reason not provided by provider.';

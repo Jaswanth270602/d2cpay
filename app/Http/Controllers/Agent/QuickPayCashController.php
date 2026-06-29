@@ -56,6 +56,60 @@ class QuickPayCashController extends Controller
         return QuickPayCashLibrary::publicUrl($path);
     }
 
+    private function createPendingPayinReport(Gatewayorder $gatewayOrder, User $user, string $providerOrderId, $ctime): int
+    {
+        $openingBalance = $user->balance->aeps_balance ?? 0;
+
+        $reportId = Report::insertGetId([
+            'number' => $user->mobile,
+            'provider_id' => $this->provider_id,
+            'amount' => $gatewayOrder->amount,
+            'api_id' => $this->api_id,
+            'status_id' => 3,
+            'created_at' => $ctime,
+            'user_id' => $user->id,
+            'profit' => 0,
+            'mode' => $gatewayOrder->mode,
+            'txnid' => '',
+            'payid' => $providerOrderId,
+            'ip_address' => $gatewayOrder->ip_address,
+            'description' => 'Add Money via Quick Pay Cash',
+            'opening_balance' => $openingBalance,
+            'total_balance' => $openingBalance,
+            'credit_by' => $user->id,
+            'wallet_type' => 2,
+            'client_id' => $gatewayOrder->client_id ?? '',
+        ]);
+
+        if ($gatewayOrder->mode !== 'API') {
+            Report::where('id', $reportId)->update(['client_id' => $reportId]);
+        }
+
+        return $reportId;
+    }
+
+    private function markPayinReportFailed(Gatewayorder $gatewayOrder, string $reason = '', string $utr = '', string $providerOrderId = ''): void
+    {
+        if (empty($gatewayOrder->report_id)) {
+            return;
+        }
+
+        $updates = ['status_id' => 2];
+        if ($reason !== '') {
+            $updates['reason'] = $reason;
+        }
+        if ($utr !== '') {
+            $updates['txnid'] = $utr;
+        }
+        if ($providerOrderId !== '') {
+            $updates['payid'] = $providerOrderId;
+        }
+
+        Report::where('id', $gatewayOrder->report_id)
+            ->where('status_id', 3)
+            ->update($updates);
+    }
+
     private function creditGatewayOrder(Gatewayorder $gatewayOrder, float $txnAmount, string $utr, string $orderId, $ctime, string $creditMode = 'Call-back'): array
     {
         if ((int)$gatewayOrder->status_id === 1) {
@@ -68,8 +122,21 @@ class QuickPayCashController extends Controller
             return ['success' => false, 'message' => 'Already processed'];
         }
 
-        if (!empty($utr) && Report::where('txnid', $utr)->exists()) {
-            return ['success' => false, 'message' => 'Duplicate transaction'];
+        $existingReportId = (int)($gatewayOrder->report_id ?? 0);
+        $existingReport = $existingReportId > 0 ? Report::find($existingReportId) : null;
+
+        if ($existingReport && in_array((int)$existingReport->status_id, [1, 6], true)) {
+            return ['success' => true, 'report_id' => $existingReportId, 'already' => true];
+        }
+
+        if (!empty($utr)) {
+            $duplicateQuery = Report::where('txnid', $utr);
+            if ($existingReportId > 0) {
+                $duplicateQuery->where('id', '!=', $existingReportId);
+            }
+            if ($duplicateQuery->exists()) {
+                return ['success' => false, 'message' => 'Duplicate transaction'];
+            }
         }
 
         Gatewayorder::where('id', $gatewayOrder->id)->update(['status_id' => 9]);
@@ -98,28 +165,43 @@ class QuickPayCashController extends Controller
             $description .= ' (' . $creditMode . ')';
         }
 
-        $reportId = Report::insertGetId([
-            'number' => $user->mobile,
-            'provider_id' => $this->provider_id,
-            'amount' => $txnAmount,
-            'api_id' => $this->api_id,
-            'status_id' => 6,
-            'created_at' => $ctime,
-            'user_id' => $user->id,
-            'profit' => '-' . $retailer,
-            'mode' => $gatewayOrder->mode,
-            'txnid' => $txnIdForReport,
-            'ip_address' => $gatewayOrder->ip_address,
-            'description' => $description,
-            'opening_balance' => $opening_balance,
-            'total_balance' => $newBalance,
-            'credit_by' => $user->id,
-            'wallet_type' => 2,
-            'client_id' => $gatewayOrder->client_id ?? '',
-        ]);
+        if ($existingReport && (int)$existingReport->status_id === 3) {
+            $reportId = $existingReportId;
+            Report::where('id', $reportId)->update([
+                'status_id' => 6,
+                'amount' => $txnAmount,
+                'profit' => '-' . $retailer,
+                'txnid' => $txnIdForReport,
+                'description' => $description,
+                'opening_balance' => $opening_balance,
+                'total_balance' => $newBalance,
+                'payid' => $orderId ?: ($existingReport->payid ?? ''),
+            ]);
+        } else {
+            $reportId = Report::insertGetId([
+                'number' => $user->mobile,
+                'provider_id' => $this->provider_id,
+                'amount' => $txnAmount,
+                'api_id' => $this->api_id,
+                'status_id' => 6,
+                'created_at' => $ctime,
+                'user_id' => $user->id,
+                'profit' => '-' . $retailer,
+                'mode' => $gatewayOrder->mode,
+                'txnid' => $txnIdForReport,
+                'payid' => $orderId,
+                'ip_address' => $gatewayOrder->ip_address,
+                'description' => $description,
+                'opening_balance' => $opening_balance,
+                'total_balance' => $newBalance,
+                'credit_by' => $user->id,
+                'wallet_type' => 2,
+                'client_id' => $gatewayOrder->client_id ?? '',
+            ]);
 
-        if ($gatewayOrder->mode !== 'API') {
-            Report::where('id', $reportId)->update(['client_id' => $reportId]);
+            if ($gatewayOrder->mode !== 'API') {
+                Report::where('id', $reportId)->update(['client_id' => $reportId]);
+            }
         }
 
         Gatewayorder::where('id', $gatewayOrder->id)->update([
@@ -222,6 +304,13 @@ class QuickPayCashController extends Controller
             Gatewayorder::where('id', $gatewayOrder->id)
                 ->where('status_id', 3)
                 ->update(['status_id' => 2, 'remark' => $parsed['utr'] ?: $parsed['orderId']]);
+            $gatewayOrder->refresh();
+            $this->markPayinReportFailed(
+                $gatewayOrder,
+                'Payment ' . strtolower($status),
+                $parsed['utr'] ?? '',
+                $parsed['orderId'] ?? ''
+            );
         }
     }
 
@@ -505,6 +594,15 @@ class QuickPayCashController extends Controller
             'remark' => $payin['orderId'],
         ]);
 
+        $user = User::find($user_id);
+        if ($user) {
+            $gatewayOrder = Gatewayorder::find($gatewayOrderId);
+            if ($gatewayOrder) {
+                $reportId = $this->createPendingPayinReport($gatewayOrder, $user, $payin['orderId'], $ctime);
+                Gatewayorder::where('id', $gatewayOrderId)->update(['report_id' => $reportId]);
+            }
+        }
+
         $responseData = [
             'txnid' => $gatewayOrderId,
             'order_token' => $merchantOrderNo,
@@ -667,6 +765,17 @@ class QuickPayCashController extends Controller
         }
 
         if (in_array($status, ['PENDING', 'PROCESSING', ''], true)) {
+            if ($orderId !== '' || $merchantOrderNo !== '') {
+                $pendingOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
+                    $query->where('order_token', $merchantOrderNo)
+                        ->orWhere('client_id', $merchantOrderNo);
+                })->where('api_id', $this->api_id)->first();
+                if ($pendingOrder && !empty($pendingOrder->report_id) && $orderId !== '') {
+                    Report::where('id', $pendingOrder->report_id)
+                        ->where('status_id', 3)
+                        ->update(['payid' => $orderId]);
+                }
+            }
             if ($status === '' && !$verifiedViaApi) {
                 $pendingOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
                     $query->where('order_token', $merchantOrderNo)
@@ -684,7 +793,7 @@ class QuickPayCashController extends Controller
         }
 
         if (in_array($status, ['FAILED', 'CANCELLED', 'REFUNDED'], true)) {
-            return DB::transaction(function () use ($merchantOrderNo, $ctime, $amount, $utr) {
+            return DB::transaction(function () use ($merchantOrderNo, $ctime, $amount, $utr, $status, $orderId) {
                 $gatewayOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
                     $query->where('order_token', $merchantOrderNo)
                         ->orWhere('client_id', $merchantOrderNo);
@@ -692,6 +801,7 @@ class QuickPayCashController extends Controller
 
                 if ($gatewayOrder && (int)$gatewayOrder->status_id === 3) {
                     Gatewayorder::where('id', $gatewayOrder->id)->update(['status_id' => 2, 'remark' => $utr]);
+                    $this->markPayinReportFailed($gatewayOrder, 'Payment ' . strtolower($status), $utr, $orderId);
                     try {
                         $this->forwardMemberCallback(
                             $gatewayOrder->user_id,
@@ -814,6 +924,21 @@ class QuickPayCashController extends Controller
                 'data' => [
                     'client_id' => $request->client_id,
                     'status' => 'failed',
+                ],
+            ]);
+        }
+
+        if ((int)$gatewayOrder->status_id === 3 && $gatewayOrder->report_id) {
+            $report = Report::find($gatewayOrder->report_id);
+            return response()->json([
+                'status' => true,
+                'message' => 'Transaction is pending',
+                'data' => [
+                    'client_id' => $request->client_id,
+                    'report_id' => $report->id ?? $gatewayOrder->report_id,
+                    'amount' => $report->amount ?? $gatewayOrder->amount,
+                    'utr' => $report->txnid ?? '',
+                    'status' => 'pending',
                 ],
             ]);
         }
