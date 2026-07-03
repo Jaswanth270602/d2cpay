@@ -338,13 +338,14 @@ class QuickPayCashController extends Controller
         ];
     }
 
-    private function logQpcResponse(string $message, string $requestMessage = '', ?string $responseType = null): void
+    private function logQpcResponse(string $message, string $requestMessage = '', ?string $responseType = null, ?int $reportId = null): void
     {
         Apiresponse::insertGetId([
             'message' => $message,
             'api_type' => $this->api_id,
             'response_type' => $responseType,
             'request_message' => $requestMessage,
+            'report_id' => $reportId,
             'created_at' => now(),
             'ip_address' => request()->ip(),
         ]);
@@ -564,7 +565,7 @@ class QuickPayCashController extends Controller
 
         $url = $this->base_url . '/api/payin/create';
         $result = $this->qpcRequest($url, json_encode($payload));
-        $this->logQpcResponse($result['body'], $url . '?' . json_encode($payload), 'payin_create');
+        $this->logQpcResponse($result['body'], $url . '?' . json_encode($payload), 'payin_create', $gatewayOrderId);
 
         $res = json_decode($result['body'], true);
         if (!is_array($res)) {
@@ -706,16 +707,27 @@ class QuickPayCashController extends Controller
 
         Log::info('QPC payin callback received', $audit);
 
+        $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
+
+        $callbackOrderId = null;
+        if ($merchantOrderNo !== '') {
+            $callbackOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
+                $query->where('order_token', $merchantOrderNo)
+                    ->orWhere('client_id', $merchantOrderNo);
+            })->where('api_id', $this->api_id)->first();
+            $callbackOrderId = $callbackOrder->id ?? null;
+        }
+
         Apiresponse::insertGetId([
             'message' => json_encode($audit),
             'api_type' => $this->api_id,
             'response_type' => 'call_back',
             'request_message' => substr((string)$request->getContent(), 0, 65000),
+            'report_id' => $callbackOrderId,
             'ip_address' => $request->ip(),
             'created_at' => $ctime,
         ]);
 
-        $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
         if ($merchantOrderNo === '' && QuickPayCashLibrary::isEffectivelyEmptyPayload($payload)) {
             return response()->json([
                 'received' => true,

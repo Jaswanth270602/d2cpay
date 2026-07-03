@@ -681,6 +681,26 @@ class ReportController extends Controller
                     ->first();
                 if ($gatewayOrder) {
                     $apiresponse = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'ASC')->get();
+
+                    // Fallback for gateways that logged without report_id (e.g. QPC payin):
+                    // match responses by the gateway order token / client id in the payload.
+                    if ($apiresponse->isEmpty()) {
+                        $tokens = array_values(array_filter([
+                            (string)$gatewayOrder->order_token,
+                            (string)$gatewayOrder->client_id,
+                        ], fn ($token) => $token !== ''));
+                        if (!empty($tokens)) {
+                            $apiresponse = Apiresponse::where('api_type', $gatewayOrder->api_id)
+                                ->where(function ($query) use ($tokens) {
+                                    foreach ($tokens as $token) {
+                                        $query->orWhere('request_message', 'like', '%' . $token . '%')
+                                            ->orWhere('message', 'like', '%' . $token . '%');
+                                    }
+                                })
+                                ->orderBy('id', 'ASC')
+                                ->get();
+                        }
+                    }
                 }
             }
 
