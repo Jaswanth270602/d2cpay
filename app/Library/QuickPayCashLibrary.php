@@ -337,7 +337,7 @@ namespace App\library {
             return 'QPI' . $gatewayOrderId . date('His');
         }
 
-        public function getPayinStatus(string $merchantOrderNo): array
+        public function getPayinStatus(string $merchantOrderNo, ?int $gatewayOrderId = null): array
         {
             $url = $this->base_url . '/api/payin/status';
             $payload = [
@@ -353,6 +353,7 @@ namespace App\library {
                 'api_type' => $this->api_id,
                 'response_type' => 'status_check',
                 'request_message' => $url . '?' . json_encode($payload),
+                'report_id' => $gatewayOrderId,
             ]);
 
             $res = json_decode($response, true);
@@ -369,9 +370,13 @@ namespace App\library {
                 $status = strtoupper((string)($data['status'] ?? $data['orderStatus'] ?? 'PENDING'));
             }
 
+            if (in_array($status, ['PAID', 'COMPLETED', 'SUCCESSFUL'], true)) {
+                $status = 'SUCCESS';
+            }
+
             return [
                 'status' => $status,
-                'utr' => (string)($data['utr'] ?? ''),
+                'utr' => (string)($data['utr'] ?? $data['UTR'] ?? $data['bank_rrn'] ?? $data['rrn'] ?? ''),
                 'orderId' => (string)($data['orderId'] ?? $data['platOrderNo'] ?? ''),
                 'amount' => (float)($data['amount'] ?? $data['payAmount'] ?? 0),
             ];

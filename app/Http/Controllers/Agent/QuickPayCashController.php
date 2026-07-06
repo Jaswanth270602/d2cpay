@@ -277,7 +277,7 @@ class QuickPayCashController extends Controller
             return;
         }
 
-        $remote = $this->qpcLibrary->getPayinStatus($gatewayOrder->order_token);
+        $remote = $this->qpcLibrary->getPayinStatus($gatewayOrder->order_token, (int)$gatewayOrder->id);
         $parsed = $this->qpcLibrary->parsePayinStatusResponse($remote);
         $status = $parsed['status'];
 
@@ -596,6 +596,7 @@ class QuickPayCashController extends Controller
         ]);
 
         $user = User::find($user_id);
+        $reportId = null;
         if ($user) {
             $gatewayOrder = Gatewayorder::find($gatewayOrderId);
             if ($gatewayOrder) {
@@ -613,6 +614,20 @@ class QuickPayCashController extends Controller
             'qrCodeUrl' => $payin['qrCodeUrl'],
             'status' => $payin['status'] ?: 'pending',
         ];
+
+        if ($reportId) {
+            $responseData['report_id'] = $reportId;
+        }
+
+        if ($mode === 'API') {
+            $providerData = is_array($res['data'] ?? null) ? $res['data'] : [];
+            $responseData['payment_page_url'] = (string)($providerData['paymentPageUrl'] ?? '');
+            if ($responseData['payment_page_url'] === '' && str_starts_with($payin['paymentUrl'], 'http')) {
+                $responseData['payment_page_url'] = $payin['paymentUrl'];
+            }
+            $responseData['upi_link'] = $payin['qrString'];
+            $responseData['payment_status'] = strtoupper((string)($providerData['orderStatus'] ?? 'PENDING'));
+        }
 
         if ($mode !== 'API') {
             if ($payin['qrCodeUrl'] !== '' && str_starts_with($payin['qrCodeUrl'], 'http')) {
@@ -914,6 +929,11 @@ class QuickPayCashController extends Controller
             return response()->json(['status' => false, 'message' => 'No matching order found!']);
         }
 
+        if ((int)$gatewayOrder->status_id === 3) {
+            $this->syncPendingOrderFromQpc($gatewayOrder);
+            $gatewayOrder->refresh();
+        }
+
         if ((int)$gatewayOrder->status_id === 1 && $gatewayOrder->report_id) {
             $report = Report::find($gatewayOrder->report_id);
             return response()->json([
@@ -930,60 +950,30 @@ class QuickPayCashController extends Controller
         }
 
         if ((int)$gatewayOrder->status_id === 2) {
+            $report = $gatewayOrder->report_id ? Report::find($gatewayOrder->report_id) : null;
             return response()->json([
                 'status' => true,
                 'message' => 'Transaction failed',
                 'data' => [
                     'client_id' => $request->client_id,
+                    'report_id' => $report->id ?? $gatewayOrder->report_id,
+                    'amount' => $report->amount ?? $gatewayOrder->amount,
+                    'utr' => $report->txnid ?? '',
                     'status' => 'failed',
                 ],
             ]);
         }
 
-        if ((int)$gatewayOrder->status_id === 3 && $gatewayOrder->report_id) {
-            $report = Report::find($gatewayOrder->report_id);
-            return response()->json([
-                'status' => true,
-                'message' => 'Transaction is pending',
-                'data' => [
-                    'client_id' => $request->client_id,
-                    'report_id' => $report->id ?? $gatewayOrder->report_id,
-                    'amount' => $report->amount ?? $gatewayOrder->amount,
-                    'utr' => $report->txnid ?? '',
-                    'status' => 'pending',
-                ],
-            ]);
-        }
-
-        $this->syncPendingOrderFromQpc($gatewayOrder);
-        $gatewayOrder->refresh();
-
-        if ((int)$gatewayOrder->status_id === 1 && $gatewayOrder->report_id) {
-            $report = Report::find($gatewayOrder->report_id);
-            return response()->json([
-                'status' => true,
-                'message' => 'Transaction record found successfully!',
-                'data' => [
-                    'client_id' => $request->client_id,
-                    'report_id' => $report->id ?? null,
-                    'amount' => $report->amount ?? $gatewayOrder->amount,
-                    'utr' => $report->txnid ?? '',
-                    'status' => 'credit',
-                ],
-            ]);
-        }
-
-        $remote = $this->qpcLibrary->getPayinStatus($gatewayOrder->order_token);
-        $parsed = $this->qpcLibrary->parsePayinStatusResponse($remote);
-
+        $report = $gatewayOrder->report_id ? Report::find($gatewayOrder->report_id) : null;
         return response()->json([
             'status' => true,
-            'message' => 'Transaction status retrieved',
+            'message' => 'Transaction is pending',
             'data' => [
                 'client_id' => $request->client_id,
-                'status' => $parsed['status'] === 'SUCCESS' ? 'credit' : 'pending',
-                'utr' => $parsed['utr'] ?? '',
-                'amount' => $gatewayOrder->amount,
+                'report_id' => $report->id ?? $gatewayOrder->report_id,
+                'amount' => $report->amount ?? $gatewayOrder->amount,
+                'utr' => $report->txnid ?? '',
+                'status' => 'pending',
             ],
         ]);
     }

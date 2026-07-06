@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('app:VtransactPayoutStatus')->everyFiveMinutes();
+        $schedule->command('qpc:sync-pending')->everyFiveMinutes();
     }
 
     /**
