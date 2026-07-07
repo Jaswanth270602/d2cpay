@@ -421,10 +421,13 @@ class RefundController extends Controller
 
         Log::info('QPC payout callback received', $audit);
 
+        $statusRaw = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+        $logType = QuickPayCashLibrary::isTerminalPayinStatus($statusRaw) ? 'call_back' : 'status_check';
+
         Apiresponse::insertGetId([
             'message' => json_encode($audit),
             'api_type' => 16,
-            'response_type' => 'call_back',
+            'response_type' => $logType,
             'request_message' => substr((string)$request->getContent(), 0, 65000),
             'ip_address' => $request->ip(),
             'created_at' => $ctime,
@@ -449,7 +452,6 @@ class RefundController extends Controller
             ], 400);
         }
 
-        $statusRaw = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
         if (in_array($statusRaw, ['SUCCESS'], true)) {
             $statusId = 1;
         } elseif (in_array($statusRaw, ['FAILED', 'CANCELLED'], true)) {

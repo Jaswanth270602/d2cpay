@@ -38,6 +38,16 @@ namespace App\library {
             return $this->sign($merchantOrderNo);
         }
 
+        public static function isTerminalPayinStatus(string $status): bool
+        {
+            return in_array(strtoupper($status), ['SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED'], true);
+        }
+
+        public static function resolvePayinLogType(string $status): string
+        {
+            return self::isTerminalPayinStatus($status) ? 'call_back' : 'status_check';
+        }
+
         public function verifyPayinCallback(array $payload, string $receivedSignature): bool
         {
             $merchantKey = $this->merchantKey;
@@ -46,20 +56,44 @@ namespace App\library {
             }
 
             $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
+            if ($merchantOrderNo === '') {
+                return false;
+            }
+
             $orderId = (string)($payload['orderId'] ?? '');
             $platOrderNo = (string)($payload['platOrderNo'] ?? '');
-            $statusCandidates = $this->callbackStatusCandidates($payload);
+            $received = strtoupper($receivedSignature);
 
+            // QPC doc v2.3: MD5(orderId + merchantOrderNo + status + merchantKey)
+            $statusForOrderId = strtoupper((string)($payload['status'] ?? ''));
+            if ($orderId !== '' && $statusForOrderId !== '') {
+                $expected = strtoupper(md5($orderId . $merchantOrderNo . $statusForOrderId . $merchantKey));
+                if (hash_equals($expected, $received)) {
+                    return true;
+                }
+            }
+
+            // QPC production format: MD5(platOrderNo + merchantOrderNo + orderStatus + merchantKey)
+            $orderStatus = strtoupper((string)($payload['orderStatus'] ?? ''));
+            if ($platOrderNo !== '' && $orderStatus !== '') {
+                $expected = strtoupper(md5($platOrderNo . $merchantOrderNo . $orderStatus . $merchantKey));
+                if (hash_equals($expected, $received)) {
+                    return true;
+                }
+            }
+
+            // Fallback: try all status variants on both reference ids
+            $statusCandidates = $this->callbackStatusCandidates($payload);
             foreach ($statusCandidates as $status) {
-                if ($orderId !== '' && $merchantOrderNo !== '') {
+                if ($orderId !== '') {
                     $expected = strtoupper(md5($orderId . $merchantOrderNo . $status . $merchantKey));
-                    if (hash_equals($expected, strtoupper($receivedSignature))) {
+                    if (hash_equals($expected, $received)) {
                         return true;
                     }
                 }
-                if ($platOrderNo !== '' && $merchantOrderNo !== '') {
+                if ($platOrderNo !== '') {
                     $expected = strtoupper(md5($platOrderNo . $merchantOrderNo . $status . $merchantKey));
-                    if (hash_equals($expected, strtoupper($receivedSignature))) {
+                    if (hash_equals($expected, $received)) {
                         return true;
                     }
                 }
@@ -234,6 +268,7 @@ namespace App\library {
             Apiresponse::insertGetId([
                 'message' => $response,
                 'api_type' => $this->api_id,
+                'response_type' => 'payout_create',
                 'report_id' => $insert_id,
                 'request_message' => $url . '?' . json_encode($payload),
             ]);
@@ -285,6 +320,7 @@ namespace App\library {
             Apiresponse::insertGetId([
                 'message' => $response,
                 'api_type' => $this->api_id,
+                'response_type' => 'status_check',
                 'report_id' => $insert_id,
                 'request_message' => $url . '?' . json_encode($payload),
             ]);

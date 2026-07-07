@@ -116,7 +116,8 @@ class QuickPayCashController extends Controller
             return ['success' => true, 'report_id' => $gatewayOrder->report_id, 'already' => true];
         }
         if ((int)$gatewayOrder->status_id === 9) {
-            return ['success' => false, 'message' => 'Already processing'];
+            Gatewayorder::where('id', $gatewayOrder->id)->where('status_id', 9)->update(['status_id' => 3]);
+            $gatewayOrder->refresh();
         }
         if ((int)$gatewayOrder->status_id !== 3) {
             return ['success' => false, 'message' => 'Already processed'];
@@ -135,6 +136,7 @@ class QuickPayCashController extends Controller
                 $duplicateQuery->where('id', '!=', $existingReportId);
             }
             if ($duplicateQuery->exists()) {
+                $this->releaseGatewayOrderProcessingLock($gatewayOrder->id);
                 return ['success' => false, 'message' => 'Duplicate transaction'];
             }
         }
@@ -143,6 +145,7 @@ class QuickPayCashController extends Controller
 
         $user = User::find($gatewayOrder->user_id);
         if (!$user) {
+            $this->releaseGatewayOrderProcessingLock($gatewayOrder->id);
             return ['success' => false, 'message' => 'User not found'];
         }
 
@@ -271,10 +274,21 @@ class QuickPayCashController extends Controller
         return ['success' => true, 'report_id' => $reportId, 'utr' => $txnIdForReport];
     }
 
-    public function syncPendingOrderFromQpc(Gatewayorder $gatewayOrder): void
+    public function syncPendingOrderFromQpc(Gatewayorder $gatewayOrder): bool
     {
-        if ((int)$gatewayOrder->status_id !== 3 || empty($gatewayOrder->order_token)) {
-            return;
+        if (empty($gatewayOrder->order_token)) {
+            return false;
+        }
+
+        $sid = (int)$gatewayOrder->status_id;
+        if ($sid === 9) {
+            Gatewayorder::where('id', $gatewayOrder->id)->where('status_id', 9)->update(['status_id' => 3]);
+            $gatewayOrder->refresh();
+            $sid = (int)$gatewayOrder->status_id;
+        }
+
+        if ($sid !== 3) {
+            return $sid === 1;
         }
 
         $remote = $this->qpcLibrary->getPayinStatus($gatewayOrder->order_token, (int)$gatewayOrder->id);
@@ -282,13 +296,15 @@ class QuickPayCashController extends Controller
         $status = $parsed['status'];
 
         if ($status === 'SUCCESS') {
-            DB::transaction(function () use ($gatewayOrder, $parsed) {
+            $credited = false;
+            DB::transaction(function () use ($gatewayOrder, $parsed, &$credited) {
                 $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
                 if (!$locked || (int)$locked->status_id !== 3) {
+                    $credited = (int)($locked->status_id ?? 0) === 1;
                     return;
                 }
                 $txnAmount = $parsed['amount'] > 0 ? $parsed['amount'] : (float)$locked->amount;
-                $this->creditGatewayOrder(
+                $result = $this->creditGatewayOrder(
                     $locked,
                     $txnAmount,
                     $parsed['utr'],
@@ -296,8 +312,15 @@ class QuickPayCashController extends Controller
                     now(),
                     'Status sync'
                 );
+                $credited = (bool)($result['success'] ?? false);
+                if (!$credited) {
+                    Log::error('QPC payin status sync credit failed', [
+                        'order_id' => $locked->id,
+                        'message' => $result['message'] ?? 'unknown',
+                    ]);
+                }
             });
-            return;
+            return $credited;
         }
 
         if (in_array($status, ['FAILED', 'CANCELLED', 'REFUNDED'], true)) {
@@ -311,7 +334,27 @@ class QuickPayCashController extends Controller
                 $parsed['utr'] ?? '',
                 $parsed['orderId'] ?? ''
             );
+            return false;
         }
+
+        return false;
+    }
+
+    private function releaseGatewayOrderProcessingLock(int $gatewayOrderId): void
+    {
+        Gatewayorder::where('id', $gatewayOrderId)->where('status_id', 9)->update(['status_id' => 3]);
+    }
+
+    private function findGatewayOrderByMerchantOrderNo(string $merchantOrderNo): ?Gatewayorder
+    {
+        if ($merchantOrderNo === '') {
+            return null;
+        }
+
+        return Gatewayorder::where(function ($query) use ($merchantOrderNo) {
+            $query->where('order_token', $merchantOrderNo)
+                ->orWhere('client_id', $merchantOrderNo);
+        })->where('api_id', $this->api_id)->orderBy('id', 'DESC')->first();
     }
 
     private function qpcRequest(string $url, string $body): array
@@ -338,7 +381,7 @@ class QuickPayCashController extends Controller
         ];
     }
 
-    private function logQpcResponse(string $message, string $requestMessage = '', ?string $responseType = null, ?int $reportId = null): void
+    private function logQpcResponse(string $message, string $requestMessage = '', ?string $responseType = null, ?int $reportId = null, ?string $ipAddress = null): void
     {
         Apiresponse::insertGetId([
             'message' => $message,
@@ -347,7 +390,7 @@ class QuickPayCashController extends Controller
             'request_message' => $requestMessage,
             'report_id' => $reportId,
             'created_at' => now(),
-            'ip_address' => request()->ip(),
+            'ip_address' => $ipAddress ?? request()->ip(),
         ]);
     }
 
@@ -394,10 +437,21 @@ class QuickPayCashController extends Controller
 
         return [
             'paymentUrl' => $paymentUrl,
+            'paymentPageUrl' => (string)($data['paymentPageUrl'] ?? (str_starts_with($paymentUrl, 'http') ? $paymentUrl : '')),
             'qrCodeUrl' => $qrCodeUrl,
             'orderId' => $orderId,
+            'platOrderNo' => (string)($data['platOrderNo'] ?? $orderId),
             'qrString' => $qrString,
+            'paymentLink' => $paymentLink,
+            'utrInputLink' => (string)($data['utrInputLink'] ?? ''),
+            'deepLink' => [
+                'upi_intent' => (string)($deepLink['upi_intent'] ?? $qrString),
+                'upi_phonepe' => (string)($deepLink['upi_phonepe'] ?? ''),
+                'upi_gpay' => (string)($deepLink['upi_gpay'] ?? ''),
+                'upi_paytm' => (string)($deepLink['upi_paytm'] ?? ''),
+            ],
             'status' => strtolower((string)($data['status'] ?? $data['orderStatus'] ?? 'pending')),
+            'orderStatus' => strtoupper((string)($data['orderStatus'] ?? $data['status'] ?? 'PENDING')),
         ];
     }
 
@@ -621,12 +675,16 @@ class QuickPayCashController extends Controller
 
         if ($mode === 'API') {
             $providerData = is_array($res['data'] ?? null) ? $res['data'] : [];
-            $responseData['payment_page_url'] = (string)($providerData['paymentPageUrl'] ?? '');
-            if ($responseData['payment_page_url'] === '' && str_starts_with($payin['paymentUrl'], 'http')) {
-                $responseData['payment_page_url'] = $payin['paymentUrl'];
-            }
+            $responseData['payment_page_url'] = $payin['paymentPageUrl'] ?: (
+                str_starts_with($payin['paymentUrl'], 'http') ? $payin['paymentUrl'] : ''
+            );
             $responseData['upi_link'] = $payin['qrString'];
-            $responseData['payment_status'] = strtoupper((string)($providerData['orderStatus'] ?? 'PENDING'));
+            $responseData['upi_intent'] = $payin['deepLink']['upi_intent'] ?? $payin['qrString'];
+            $responseData['upi_phonepe'] = $payin['deepLink']['upi_phonepe'] ?? '';
+            $responseData['upi_gpay'] = $payin['deepLink']['upi_gpay'] ?? '';
+            $responseData['upi_paytm'] = $payin['deepLink']['upi_paytm'] ?? '';
+            $responseData['payment_status'] = $payin['orderStatus'] ?: 'PENDING';
+            $responseData['utr_input_url'] = $payin['utrInputLink'] ?? '';
         }
 
         if ($mode !== 'API') {
@@ -719,43 +777,53 @@ class QuickPayCashController extends Controller
         $ctime = now();
         $payload = QuickPayCashLibrary::parseIncomingCallback($request);
         $audit = QuickPayCashLibrary::buildCallbackAudit($request, $payload);
-
-        Log::info('QPC payin callback received', $audit);
-
         $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
+        $gatewayOrder = $this->findGatewayOrderByMerchantOrderNo($merchantOrderNo);
+        $gatewayOrderId = $gatewayOrder->id ?? null;
 
-        $callbackOrderId = null;
-        if ($merchantOrderNo !== '') {
-            $callbackOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
-                $query->where('order_token', $merchantOrderNo)
-                    ->orWhere('client_id', $merchantOrderNo);
-            })->where('api_id', $this->api_id)->first();
-            $callbackOrderId = $callbackOrder->id ?? null;
-        }
+        $status = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+        $amount = (float)($payload['amount'] ?? 0);
+        $utr = (string)($payload['utr'] ?? '');
+        $orderId = (string)($payload['orderId'] ?? $payload['platOrderNo'] ?? '');
+        $logType = QuickPayCashLibrary::resolvePayinLogType($status);
 
-        Apiresponse::insertGetId([
-            'message' => json_encode($audit),
-            'api_type' => $this->api_id,
-            'response_type' => 'call_back',
-            'request_message' => substr((string)$request->getContent(), 0, 65000),
-            'report_id' => $callbackOrderId,
-            'ip_address' => $request->ip(),
-            'created_at' => $ctime,
-        ]);
+        Log::info('QPC payin callback received', array_merge($audit, ['log_type' => $logType, 'status' => $status]));
+
+        $this->logQpcResponse(
+            json_encode($audit),
+            substr((string)$request->getContent(), 0, 65000),
+            $logType,
+            $gatewayOrderId,
+            $request->ip()
+        );
 
         if ($merchantOrderNo === '' && QuickPayCashLibrary::isEffectivelyEmptyPayload($payload)) {
-            return response()->json([
-                'received' => true,
-                'status' => true,
-                'message' => 'Empty callback acknowledged',
-            ]);
+            return response()->json(['received' => true, 'status' => true, 'message' => 'Empty callback acknowledged']);
+        }
+
+        if ($merchantOrderNo === '') {
+            return response()->json(['received' => false, 'status' => false, 'message' => 'Missing merchantOrderNo'], 400);
+        }
+
+        if (!$gatewayOrder) {
+            return response()->json(['received' => false, 'status' => false, 'message' => 'Order not found'], 404);
+        }
+
+        // QPC doc: PENDING / PROCESSING — acknowledge only, no credit
+        if (in_array($status, ['PENDING', 'PROCESSING', ''], true)) {
+            if ($orderId !== '' && !empty($gatewayOrder->report_id)) {
+                Report::where('id', $gatewayOrder->report_id)
+                    ->where('status_id', 3)
+                    ->update(['payid' => $orderId]);
+            }
+            return response()->json(['received' => true, 'status' => true, 'message' => 'Pending accepted']);
         }
 
         $receivedSignature = (string)($payload['signature'] ?? '');
         $signatureValid = $receivedSignature !== '' && $this->qpcLibrary->verifyPayinCallback($payload, $receivedSignature);
         $verifiedViaApi = false;
 
-        if (!$signatureValid && $merchantOrderNo !== '') {
+        if (!$signatureValid) {
             $confirmed = $this->qpcLibrary->confirmPayinSuccessFromApi($merchantOrderNo);
             if ($confirmed) {
                 $verifiedViaApi = true;
@@ -766,116 +834,69 @@ class QuickPayCashController extends Controller
                     'amount' => (float)($confirmed['amount'] ?? $payload['amount'] ?? 0),
                     'orderId' => (string)($confirmed['orderId'] ?? $payload['orderId'] ?? ''),
                 ]);
+                $status = 'SUCCESS';
+                $utr = (string)($payload['utr'] ?? '');
+                $orderId = (string)($payload['orderId'] ?? '');
             }
-        }
-
-        if (!$signatureValid && !$verifiedViaApi) {
-            Log::error('QPC payin callback: invalid signature', ['payload' => $payload]);
-            return response()->json([
-                'received' => false,
-                'status' => false,
-                'message' => 'Invalid signature',
-            ], 400);
-        }
-
-        $status = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
-        $amount = (float)($payload['amount'] ?? 0);
-        $utr = (string)($payload['utr'] ?? '');
-        $orderId = (string)($payload['orderId'] ?? $payload['platOrderNo'] ?? '');
-
-        if ($merchantOrderNo === '') {
-            return response()->json([
-                'received' => false,
-                'status' => false,
-                'message' => 'Missing merchantOrderNo',
-            ], 400);
-        }
-
-        if (in_array($status, ['PENDING', 'PROCESSING', ''], true)) {
-            if ($orderId !== '' || $merchantOrderNo !== '') {
-                $pendingOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
-                    $query->where('order_token', $merchantOrderNo)
-                        ->orWhere('client_id', $merchantOrderNo);
-                })->where('api_id', $this->api_id)->first();
-                if ($pendingOrder && !empty($pendingOrder->report_id) && $orderId !== '') {
-                    Report::where('id', $pendingOrder->report_id)
-                        ->where('status_id', 3)
-                        ->update(['payid' => $orderId]);
-                }
-            }
-            if ($status === '' && !$verifiedViaApi) {
-                $pendingOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
-                    $query->where('order_token', $merchantOrderNo)
-                        ->orWhere('client_id', $merchantOrderNo);
-                })->where('api_id', $this->api_id)->first();
-                if ($pendingOrder) {
-                    $this->syncPendingOrderFromQpc($pendingOrder);
-                }
-            }
-            return response()->json([
-                'received' => true,
-                'status' => true,
-                'message' => 'Pending accepted',
-            ]);
         }
 
         if (in_array($status, ['FAILED', 'CANCELLED', 'REFUNDED'], true)) {
-            return DB::transaction(function () use ($merchantOrderNo, $ctime, $amount, $utr, $status, $orderId) {
-                $gatewayOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
-                    $query->where('order_token', $merchantOrderNo)
-                        ->orWhere('client_id', $merchantOrderNo);
-                })->where('api_id', $this->api_id)->lockForUpdate()->first();
+            if (!$signatureValid && !$verifiedViaApi) {
+                Log::error('QPC payin callback: invalid signature on failure', ['payload' => $payload]);
+                return response()->json(['received' => false, 'status' => false, 'message' => 'Invalid signature'], 400);
+            }
 
-                if ($gatewayOrder && (int)$gatewayOrder->status_id === 3) {
-                    Gatewayorder::where('id', $gatewayOrder->id)->update(['status_id' => 2, 'remark' => $utr]);
-                    $this->markPayinReportFailed($gatewayOrder, 'Payment ' . strtolower($status), $utr, $orderId);
+            return DB::transaction(function () use ($gatewayOrder, $ctime, $amount, $utr, $status, $orderId, $merchantOrderNo) {
+                $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
+                if ($locked && (int)$locked->status_id === 3) {
+                    Gatewayorder::where('id', $locked->id)->update(['status_id' => 2, 'remark' => $utr ?: $orderId]);
+                    $this->markPayinReportFailed($locked, 'Payment ' . strtolower($status), $utr, $orderId);
                     try {
                         $this->forwardMemberCallback(
-                            $gatewayOrder->user_id,
+                            $locked->user_id,
                             'failed',
-                            $gatewayOrder->client_id ?: $merchantOrderNo,
-                            $amount > 0 ? $amount : (float)$gatewayOrder->amount,
+                            $locked->client_id ?: $merchantOrderNo,
+                            $amount > 0 ? $amount : (float)$locked->amount,
                             $utr,
-                            $gatewayOrder->id,
+                            $locked->id,
                             $ctime
                         );
                     } catch (\Exception $e) {
                         Log::error('QPC payin failed callback forward error', ['error' => $e->getMessage()]);
                     }
                 }
-                return response()->json([
-                    'received' => true,
-                    'status' => true,
-                    'message' => 'Failed callback accepted',
-                ]);
+                return response()->json(['received' => true, 'status' => true, 'message' => 'Failed callback accepted']);
             });
         }
 
         if ($status !== 'SUCCESS') {
-            return response()->json([
-                'received' => true,
-                'status' => true,
-                'message' => 'Status ignored: ' . $status,
-            ]);
+            return response()->json(['received' => true, 'status' => true, 'message' => 'Status ignored: ' . $status]);
         }
 
-        return DB::transaction(function () use ($merchantOrderNo, $amount, $utr, $orderId, $ctime, $verifiedViaApi) {
-            $gatewayOrder = Gatewayorder::where(function ($query) use ($merchantOrderNo) {
-                $query->where('order_token', $merchantOrderNo)
-                    ->orWhere('client_id', $merchantOrderNo);
-            })->where('api_id', $this->api_id)->lockForUpdate()->first();
+        // SUCCESS — verify signature or confirm via QPC status API / sync
+        if (!$signatureValid && !$verifiedViaApi) {
+            $this->syncPendingOrderFromQpc($gatewayOrder);
+            $gatewayOrder->refresh();
+            if ((int)$gatewayOrder->status_id === 1) {
+                return response()->json(['received' => true, 'status' => true, 'message' => 'Already processed via status sync']);
+            }
+            Log::error('QPC payin callback: invalid signature on success', ['payload' => $payload]);
+            return response()->json(['received' => false, 'status' => false, 'message' => 'Invalid signature'], 400);
+        }
 
-            if (!$gatewayOrder) {
-                return response()->json([
-                    'received' => false,
-                    'status' => false,
-                    'message' => 'Order not found',
-                ], 404);
+        return DB::transaction(function () use ($gatewayOrder, $amount, $utr, $orderId, $ctime, $verifiedViaApi) {
+            $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
+            if (!$locked) {
+                return response()->json(['received' => false, 'status' => false, 'message' => 'Order not found'], 404);
             }
 
-            $txnAmount = $amount > 0 ? $amount : (float)$gatewayOrder->amount;
+            if ((int)$locked->status_id === 1) {
+                return response()->json(['received' => true, 'status' => true, 'message' => 'Already processed']);
+            }
+
+            $txnAmount = $amount > 0 ? $amount : (float)$locked->amount;
             $creditMode = $verifiedViaApi ? 'Status-sync' : 'Call-back';
-            $result = $this->creditGatewayOrder($gatewayOrder, $txnAmount, $utr, $orderId, $ctime, $creditMode);
+            $result = $this->creditGatewayOrder($locked, $txnAmount, $utr, $orderId, $ctime, $creditMode);
 
             if ($result['already'] ?? false) {
                 return response()->json([
@@ -887,11 +908,15 @@ class QuickPayCashController extends Controller
             }
 
             if (!($result['success'] ?? false)) {
+                Log::error('QPC payin callback credit failed', [
+                    'order_id' => $locked->id,
+                    'message' => $result['message'] ?? 'unknown',
+                ]);
                 return response()->json([
                     'received' => false,
                     'status' => false,
                     'message' => $result['message'] ?? 'Unable to process payment',
-                ], 400);
+                ], 500);
             }
 
             return response()->json([

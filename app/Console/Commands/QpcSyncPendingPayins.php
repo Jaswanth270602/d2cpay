@@ -15,7 +15,7 @@ class QpcSyncPendingPayins extends Command
     public function handle(): int
     {
         $orderId = $this->option('order');
-        $query = Gatewayorder::where('api_id', 16)->where('status_id', 3);
+        $query = Gatewayorder::where('api_id', 16)->whereIn('status_id', [3, 9]);
 
         if ($orderId !== null && $orderId !== '') {
             $query->where('id', (int)$orderId);
@@ -32,10 +32,10 @@ class QpcSyncPendingPayins extends Command
 
         foreach ($orders as $order) {
             $before = (int)$order->status_id;
-            $controller->syncPendingOrderFromQpc($order);
+            $credited = $controller->syncPendingOrderFromQpc($order);
             $order->refresh();
 
-            if ((int)$order->status_id === 1 && $before === 3) {
+            if ($credited || ((int)$order->status_id === 1 && $before !== 1)) {
                 $synced++;
                 $this->info("Order {$order->id} ({$order->order_token}) credited. report_id={$order->report_id}");
             } elseif ((int)$order->status_id === 2 && $before === 3) {
