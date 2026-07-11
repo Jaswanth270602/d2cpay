@@ -10,6 +10,9 @@
 
             <div class="col-lg-8 col-xl-9">
 
+                <div class="alert alert-info" role="alert">
+                    <strong>RojgaarPe (Payin 10 gateway):</strong> When your account is routed to RojgaarPe for payouts, each transfer must be between <strong>₹500</strong> and <strong>₹30,000</strong>. Configure your payout callback URL in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a>.
+                </div>
 
 
 
@@ -77,7 +80,7 @@
                                 <td>amount</td>
                                 <td>Number</td>
                                 <td>required, numeric, between:min_amount,max_amount</td>
-                                <td>The transaction amount, must be a numeric value between the provider's minimum and maximum allowed amounts.</td>
+                                <td>The transaction amount in INR. For RojgaarPe payouts: ₹500 – ₹30,000. Other providers may have different limits.</td>
                             </tr>
                             <tr>
                                 <td>channel_id</td>
@@ -103,10 +106,84 @@
                         <pre style="color: #ffc107;">Pending Response : {"status":"pending","message":"Your payout transaction is in process. Please wait for confirmation.","utr":"","payid":"12345"}</pre>
                         <hr>
                         <div class="alert alert-danger mg-b-0" role="alert">
-                            If the status is <strong>pending</strong>, the actual status and UTR will be sent in the callback. Ensure you update the callback settings accordingly.                        </div>
+                            If the status is <strong>pending</strong>, the final status and UTR will be sent to your payout callback URL. Configure it in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a> (Payout Callback URL).
+                        </div>
                     </div>
                 </div>
 
+
+
+                <div class="card" id="basic-alert">
+                    <div class="card-body">
+                        <div>
+                            <h6 class="card-title mb-1">Payout Callback</h6>
+                        </div>
+                        <hr>
+
+                        <p>When a payout reaches a terminal or updated state, {{ $company_website }} sends a <strong>GET</strong> request to your <strong>Payout Callback URL</strong> (set in Developer &rarr; Settings). Verify the <code>signature</code> before updating your records.</p>
+
+                        <table class="table main-table-reference mt-0 mb-0">
+                            <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><code>status</code></td>
+                                <td>string</td>
+                                <td><code>success</code>, <code>failed</code>, or <code>pending</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>client_id</code></td>
+                                <td>string</td>
+                                <td>Your <code>client_id</code> from the transfer request.</td>
+                            </tr>
+                            <tr>
+                                <td><code>amount</code></td>
+                                <td>numeric</td>
+                                <td>Transfer amount in INR.</td>
+                            </tr>
+                            <tr>
+                                <td><code>utr</code></td>
+                                <td>string</td>
+                                <td>Bank UTR / reference number (empty while pending).</td>
+                            </tr>
+                            <tr>
+                                <td><code>txnid</code></td>
+                                <td>int</td>
+                                <td>Internal payout report ID (<code>payid</code> from the transfer response).</td>
+                            </tr>
+                            <tr>
+                                <td><code>signature</code></td>
+                                <td>string</td>
+                                <td>HMAC-SHA256 of the query string (without <code>signature</code>) using your API token as the secret.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <hr>
+                        <h6 class="card-title mb-1">Signature verification</h6>
+<pre>$params = [
+    'status'    => 'success',
+    'client_id' => 'PAYOUT_001',
+    'amount'    => 1000,
+    'utr'       => '520613452706',
+    'txnid'     => 12345,
+];
+$signatureString = http_build_query($params);
+$expected = hash_hmac('sha256', $signatureString, YOUR_API_TOKEN);
+// Compare $expected with $_GET['signature']</pre>
+                    </div>
+                    <div class="card-footer">
+<pre>Sample callback URL (GET) :
+https://your-domain.com/payout/callback?status=success&amp;client_id=PAYOUT_001&amp;amount=1000&amp;utr=520613452706&amp;txnid=12345&amp;signature=abc123...</pre>
+                        <hr>
+                        <p class="mb-0"><small><strong>Note:</strong> This is your merchant callback. The RojgaarPe provider webhook (<code>{{ url('api/call-back/rojgaarpe-payout') }}</code>) is handled internally when your account uses the RojgaarPe payout route.</small></p>
+                    </div>
+                </div>
 
 
 

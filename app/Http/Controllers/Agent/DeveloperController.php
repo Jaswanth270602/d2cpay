@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use App\Library\SmsLibrary;
+use App\Library\BasicLibrary;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\Provider;
@@ -485,8 +486,26 @@ class DeveloperController extends Controller
 
     function payinNineDocs()
     {
+        $library = new BasicLibrary();
+        $activeService = $library->getActiveService(340, Auth::id());
+        if (($activeService['status_id'] ?? 0) != 1) {
+            return redirect()->back();
+        }
+
         $data = array('page_title' => 'Payin 9 Docs');
         return view('agent.developer.payinNineDocs')->with($data);
+    }
+
+    function payinTenDocs()
+    {
+        $library = new BasicLibrary();
+        $activeService = $library->getActiveService(341, Auth::id());
+        if (($activeService['status_id'] ?? 0) != 1) {
+            return redirect()->back();
+        }
+
+        $data = array('page_title' => 'Payin 10 Docs');
+        return view('agent.developer.payinTenDocs')->with($data);
     }
 
 }

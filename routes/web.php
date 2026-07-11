@@ -681,6 +681,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payin-seven-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinSevenDocs']);
             Route::get('/payin-eight-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinEightDocs']);
             Route::get('/payin-nine-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinNineDocs']);
+            Route::get('/payin-ten-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinTenDocs']);
 
         });
 

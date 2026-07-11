@@ -10,6 +10,11 @@
         </div>
         <div class="main-content-left main-content-left-mail card-body">
             <div class="main-mail-menu">
+                @php
+                    $library = new \App\Library\BasicLibrary;
+                    $payinNineActive = ($library->getActiveService(340, Auth::id())['status_id'] ?? 0) == 1;
+                    $payinTenActive = ($library->getActiveService(341, Auth::id())['status_id'] ?? 0) == 1;
+                @endphp
                 <nav class="nav main-nav-column mg-b-20">
                     <a class="nav-link {{(Request::is('*settings') ? 'active' : '')}}" href="{{url('agent/developer/settings')}}">Settings</a>
                    {{-- <a class="nav-link {{(Request::is('*upi-collection') ? 'active' : '')}}" href="{{url('agent/developer/upi-collection')}}">Add Money</a>--}}
@@ -23,7 +28,12 @@
                     <!-- <a class="nav-link {{(Request::is('*payin-six-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-six-docs')}}">Payin 6</a> -->
                     <!-- <a class="nav-link {{(Request::is('*payin-seven-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-seven-docs')}}">Payin 7</a> -->
                     <!-- <a class="nav-link {{(Request::is('*payin-eight-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-eight-docs')}}">Payin 8</a> -->
+                    @if($payinNineActive)
                     <a class="nav-link {{(Request::is('*payin-nine-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-nine-docs')}}">Payin 9</a>
+                    @endif
+                    @if($payinTenActive)
+                    <a class="nav-link {{(Request::is('*payin-ten-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-ten-docs')}}">Payin 10</a>
+                    @endif
                     <input type="hidden" id="BiometricData">
                 </nav>
 
