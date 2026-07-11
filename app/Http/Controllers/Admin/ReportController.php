@@ -28,6 +28,7 @@ use Helpers;
 use App\Models\Sitesetting;
 use App\Library\PermissionLibrary;
 use App\Library\BasicLibrary;
+use App\library\RojgaarPeLibrary;
 
 class ReportController extends Controller
 {
@@ -755,16 +756,27 @@ class ReportController extends Controller
 
         if ($latestApi) {
             $apiMessage = trim($this->prettifyApiPayload($latestApi->message));
-            if ($apiMessage !== '') {
+            if ($apiMessage !== '' && !$this->isPendingStatusPollNoise($latestApi, $apiMessage, (int)$report->status_id)) {
                 return $apiMessage;
             }
         }
 
         if ((int)$report->status_id === 3) {
-            return 'still pending - will update soon';
+            return RojgaarPeLibrary::pendingPayinDisplayReason();
         }
 
         return 'Failure reason not provided by provider.';
+    }
+
+    private function isPendingStatusPollNoise(?Apiresponse $apiRow, string $apiMessage, int $statusId): bool
+    {
+        if ($statusId !== 3) {
+            return false;
+        }
+
+        $responseType = $apiRow ? (string)$apiRow->response_type : null;
+
+        return RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType);
     }
 
     private function prettifyApiPayload($payload): string

@@ -809,6 +809,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/view-qrcode', [App\Http\Controllers\Agent\QuickPayCashController::class, 'viewQrcode']);
         });
 
+        Route::group(['prefix' => 'add-money/v10', 'middleware' => 'auth'], function () {
+            Route::get('/welcome', [App\Http\Controllers\Agent\RojgaarPeController::class, 'welcome']);
+            Route::post('/create-order', [App\Http\Controllers\Agent\RojgaarPeController::class, 'createOrderWeb']);
+            Route::post('/order-status', [App\Http\Controllers\Agent\RojgaarPeController::class, 'webOrderStatus']);
+            Route::get('/view-qrcode', [App\Http\Controllers\Agent\RojgaarPeController::class, 'viewQrcode']);
+        });
+
 
         /* Route::group(['prefix' => 'add-money/v4', 'middleware' => 'auth'], function () {
              Route::get('/welcome', [App\Http\Controllers\Agent\GrahakpayController::class, 'welcome']);

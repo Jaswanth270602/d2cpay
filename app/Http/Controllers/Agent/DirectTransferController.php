@@ -38,6 +38,7 @@ use App\Library\VtransactLibrary;
 use App\Library\SafepPayLibrary;
 use App\Library\ZigPayLibrary;
 use App\Library\QuickPayCashLibrary;
+use App\Library\RojgaarPeLibrary;
 use App\Imports\BulkUpload;
 use App\Exports\BulkPayoutTemplateExport;
 
@@ -556,6 +557,12 @@ class DirectTransferController extends Controller
                     $payid = $response['payid'];
                 }elseif ($api_id == 16){
                     $library = new QuickPayCashLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 17){
+                    $library = new RojgaarPeLibrary();
                     $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
                     $status_id = $response['status_id'];
                     $utr = $response['txnid'];

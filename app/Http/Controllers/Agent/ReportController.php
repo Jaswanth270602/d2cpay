@@ -18,6 +18,7 @@ use App\Models\Gatewayorder;
 use App\Models\Apiresponse;
 use \Crypt;
 use App\Library\BasicLibrary;
+use App\library\RojgaarPeLibrary;
 
 class ReportController extends Controller
 {
@@ -176,29 +177,52 @@ class ReportController extends Controller
         }
 
         if ($latestApi) {
-            $message = trim((string)$latestApi->message);
-            if ($message !== '') {
-                $decoded = json_decode($message, true);
-                if (is_array($decoded)) {
-                    foreach (['message', 'responseMessage', 'error', 'errors', 'status'] as $key) {
-                        if (!empty($decoded[$key])) {
-                            if (is_array($decoded[$key])) {
-                                return json_encode($decoded[$key]);
-                            }
-                            return (string)$decoded[$key];
-                        }
-                    }
-                    return json_encode($decoded);
-                }
-                return $message;
+            $apiMessage = trim($this->prettifyApiPayload($latestApi->message));
+            if ($apiMessage !== '' && !$this->isPendingStatusPollNoise($latestApi, $apiMessage, (int)$report->status_id)) {
+                return $apiMessage;
             }
         }
 
         if ((int)$report->status_id === 3) {
-            return 'still pending - will update soon';
+            return RojgaarPeLibrary::pendingPayinDisplayReason();
         }
 
         return 'Failure reason not provided by provider.';
+    }
+
+    private function isPendingStatusPollNoise(?Apiresponse $apiRow, string $apiMessage, int $statusId): bool
+    {
+        if ($statusId !== 3) {
+            return false;
+        }
+
+        $responseType = $apiRow ? (string)$apiRow->response_type : null;
+
+        return RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType);
+    }
+
+    private function prettifyApiPayload($payload): string
+    {
+        $message = trim((string)$payload);
+        if ($message === '') {
+            return '';
+        }
+
+        $decoded = json_decode($message, true);
+        if (!is_array($decoded)) {
+            return $message;
+        }
+
+        foreach (['message', 'responseMessage', 'error', 'errors', 'status'] as $key) {
+            if (!empty($decoded[$key])) {
+                if (is_array($decoded[$key])) {
+                    return json_encode($decoded[$key]);
+                }
+                return (string)$decoded[$key];
+            }
+        }
+
+        return json_encode($decoded);
     }
 
 

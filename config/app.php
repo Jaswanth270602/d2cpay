@@ -59,6 +59,8 @@ return [
 
     'qpc_public_url' => env('QPC_PUBLIC_URL', ''),
 
+    'rojgaarpe_public_url' => env('ROJGAARPE_PUBLIC_URL', ''),
+
     'asset_url' => env('ASSET_URL'),
 
     /*
