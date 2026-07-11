@@ -128,7 +128,7 @@ foreach ($commissionTables as $table) {
 }
 
 echo "Done. Callback URLs:\n";
-echo "  Payin:  " . \App\library\RojgaarPeLibrary::publicUrl('api/call-back/rojgaarpe-payin') . "\n";
-echo "  Payout: " . \App\library\RojgaarPeLibrary::publicUrl('api/call-back/rojgaarpe-payout') . "\n";
+echo "  Payin:  " . \App\Library\RojgaarPeLibrary::publicUrl('api/call-back/rojgaarpe-payin') . "\n";
+echo "  Payout: " . \App\Library\RojgaarPeLibrary::publicUrl('api/call-back/rojgaarpe-payout') . "\n";
 echo "  Web UI: " . url('agent/add-money/v10/welcome') . "\n";
 echo "\nEnable Payin 10 separately: Admin -> Company Settings -> Active Service -> add 'Payin 10' (service id {$serviceId})\n";

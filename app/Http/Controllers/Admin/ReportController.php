@@ -28,7 +28,7 @@ use Helpers;
 use App\Models\Sitesetting;
 use App\Library\PermissionLibrary;
 use App\Library\BasicLibrary;
-use App\library\RojgaarPeLibrary;
+use App\Library\RojgaarPeLibrary;
 
 class ReportController extends Controller
 {

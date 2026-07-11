@@ -18,7 +18,7 @@ use App\Models\Gatewayorder;
 use App\Models\Apiresponse;
 use \Crypt;
 use App\Library\BasicLibrary;
-use App\library\RojgaarPeLibrary;
+use App\Library\RojgaarPeLibrary;
 
 class ReportController extends Controller
 {
