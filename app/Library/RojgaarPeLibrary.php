@@ -363,6 +363,18 @@ namespace App\library {
             return 'Awaiting payment confirmation';
         }
 
+        public static function pendingPayoutDisplayReason(): string
+        {
+            return 'Awaiting payout confirmation';
+        }
+
+        public static function pendingDisplayReason(int $walletType): string
+        {
+            return $walletType === 1
+                ? self::pendingPayoutDisplayReason()
+                : self::pendingPayinDisplayReason();
+        }
+
         public function getPayinStatus(string $merchantRef, ?int $gatewayOrderId = null): array
         {
             if ($merchantRef === '') {

@@ -735,6 +735,10 @@ class ReportController extends Controller
             return '';
         }
 
+        if ((int)$report->status_id === 3) {
+            return RojgaarPeLibrary::pendingDisplayReason((int)$report->wallet_type);
+        }
+
         $txnid = trim((string)$report->txnid);
         if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
             if ($txnid !== '' && stripos($txnid, 'UTR') === false) {
@@ -759,10 +763,6 @@ class ReportController extends Controller
             if ($apiMessage !== '' && !$this->isPendingStatusPollNoise($latestApi, $apiMessage, (int)$report->status_id)) {
                 return $apiMessage;
             }
-        }
-
-        if ((int)$report->status_id === 3) {
-            return RojgaarPeLibrary::pendingPayinDisplayReason();
         }
 
         return 'Failure reason not provided by provider.';
