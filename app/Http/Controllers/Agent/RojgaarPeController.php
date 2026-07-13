@@ -789,7 +789,7 @@ class RojgaarPeController extends Controller
         }
 
         if ($merchantOrderNo === '') {
-            return response()->json(['received' => false, 'status' => false, 'message' => 'Missing merchant_refid'], 400);
+            return response()->json(['received' => false, 'status' => false, 'message' => 'Missing merchant_refid or txn_id'], 400);
         }
 
         if (!$gatewayOrder) {
@@ -876,11 +876,8 @@ class RojgaarPeController extends Controller
                     'order_id' => $locked->id,
                     'message' => $result['message'] ?? 'unknown',
                 ]);
-                return response()->json([
-                    'received' => false,
-                    'status' => false,
-                    'message' => $result['message'] ?? 'Unable to process payment',
-                ], 500);
+                // Still ack 200 so provider does not hammer retries while we investigate
+                return $this->rojgaarPeCallbackAck();
             }
 
             return $this->rojgaarPeCallbackAck();

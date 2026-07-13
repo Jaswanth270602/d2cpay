@@ -147,18 +147,19 @@ namespace App\library {
             $status = self::normalizePayinWebhookStatus($statusRaw);
             $utr = (string)($payload['utr'] ?? $payload['UTR'] ?? '');
             $amount = $payload['amount'] ?? 0;
-            // RojgaarPe docs use provider_txnid; also accept provider_txn / provider_txn_id
+            // Prefer provider_txnid (RojgaarPe webhook); do not fall back to txn_id
+            // when it equals merchant_refid in their sample payload.
             $providerTxn = (string)(
                 $payload['provider_txnid']
                 ?? $payload['provider_txn_id']
                 ?? $payload['provider_txn']
-                ?? $payload['txn_id']
                 ?? ''
             );
 
             $payload['merchant_refid'] = $merchantRef;
             $payload['merchantOrderNo'] = $merchantRef;
             $payload['reference_id'] = $merchantRef;
+            $payload['txn_id'] = (string)($payload['txn_id'] ?? $merchantRef);
             $payload['status'] = $status;
             $payload['orderStatus'] = $status;
             $payload['status_raw'] = $statusRaw;
@@ -168,6 +169,10 @@ namespace App\library {
             $payload['provider_txn'] = $providerTxn;
             $payload['provider_txnid'] = $providerTxn;
             $payload['provider_txn_id'] = $providerTxn;
+            $payload['payment_mode'] = (string)($payload['payment_mode'] ?? '');
+            $payload['payer_name'] = (string)($payload['payer_name'] ?? '');
+            $payload['payer_account'] = (string)($payload['payer_account'] ?? '');
+            $payload['upi_id'] = (string)($payload['upi_id'] ?? '');
 
             return $payload;
         }
