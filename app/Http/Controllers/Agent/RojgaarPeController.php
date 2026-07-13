@@ -735,19 +735,43 @@ class RojgaarPeController extends Controller
         return response()->json(['ok' => true, 'payment_status' => 'pending']);
     }
 
+    /**
+     * Standard ack expected by RojgaarPe for POST application/json payin webhooks.
+     */
+    private function rojgaarPeCallbackAck(string $message = 'Callback Received Successfully')
+    {
+        return response()->json([
+            'received' => true,
+            'status' => true,
+            'message' => $message,
+        ], 200);
+    }
+
     public function payinCallback(Request $request)
     {
         $ctime = now();
         $payload = RojgaarPeLibrary::parseIncomingCallback($request);
         $audit = RojgaarPeLibrary::buildCallbackAudit($request, $payload);
-        $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? '');
+        // Prefer merchant_refid / txn_id from RojgaarPe JSON callback payload
+        $merchantOrderNo = (string)(
+            $payload['merchantOrderNo']
+            ?? $payload['merchant_refid']
+            ?? $payload['txn_id']
+            ?? ''
+        );
         $gatewayOrder = $this->findGatewayOrderByMerchantOrderNo($merchantOrderNo);
         $gatewayOrderId = $gatewayOrder->id ?? null;
 
         $status = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
         $amount = (float)($payload['amount'] ?? 0);
         $utr = (string)($payload['utr'] ?? '');
-        $orderId = (string)($payload['orderId'] ?? $payload['platOrderNo'] ?? '');
+        $orderId = (string)(
+            $payload['orderId']
+            ?? $payload['provider_txnid']
+            ?? $payload['provider_txn_id']
+            ?? $payload['platOrderNo']
+            ?? ''
+        );
         $logType = RojgaarPeLibrary::resolvePayinLogType($status);
 
         Log::info('RojgaarPe payin callback received', array_merge($audit, ['log_type' => $logType, 'status' => $status]));
@@ -761,11 +785,11 @@ class RojgaarPeController extends Controller
         );
 
         if ($merchantOrderNo === '' && RojgaarPeLibrary::isEffectivelyEmptyPayload($payload)) {
-            return response()->json(['received' => true, 'status' => true, 'message' => 'Empty callback acknowledged']);
+            return $this->rojgaarPeCallbackAck();
         }
 
         if ($merchantOrderNo === '') {
-            return response()->json(['received' => false, 'status' => false, 'message' => 'Missing merchantOrderNo'], 400);
+            return response()->json(['received' => false, 'status' => false, 'message' => 'Missing merchant_refid'], 400);
         }
 
         if (!$gatewayOrder) {
@@ -779,7 +803,7 @@ class RojgaarPeController extends Controller
                     ->where('status_id', 3)
                     ->update(['payid' => $orderId]);
             }
-            return response()->json(['received' => true, 'status' => true, 'message' => 'Pending accepted']);
+            return $this->rojgaarPeCallbackAck();
         }
 
         if (in_array($status, ['FAILED', 'CANCELLED', 'REFUNDED'], true)) {
@@ -802,14 +826,16 @@ class RojgaarPeController extends Controller
                         Log::error('RojgaarPe payin failed callback forward error', ['error' => $e->getMessage()]);
                     }
                 }
-                return response()->json(['received' => true, 'status' => true, 'message' => 'Failed callback accepted']);
+                // Idempotent: already-failed orders still ack 200
+                return $this->rojgaarPeCallbackAck();
             });
         }
 
         if ($status !== 'SUCCESS') {
-            return response()->json(['received' => true, 'status' => true, 'message' => 'Status ignored: ' . $status]);
+            return $this->rojgaarPeCallbackAck();
         }
 
+        // Prefer UTR / amount / provider id from webhook; optionally enrich via status API
         $verifiedViaApi = false;
         $confirmed = $this->rpLibrary->confirmPayinSuccessFromApi($merchantOrderNo, (int)$gatewayOrder->id);
         if ($confirmed) {
@@ -832,8 +858,9 @@ class RojgaarPeController extends Controller
                 return response()->json(['received' => false, 'status' => false, 'message' => 'Order not found'], 404);
             }
 
+            // Duplicate SUCCESS: acknowledge 200 without re-crediting
             if ((int)$locked->status_id === 1) {
-                return response()->json(['received' => true, 'status' => true, 'message' => 'Already processed']);
+                return $this->rojgaarPeCallbackAck();
             }
 
             $txnAmount = $amount > 0 ? $amount : (float)$locked->amount;
@@ -841,12 +868,7 @@ class RojgaarPeController extends Controller
             $result = $this->creditGatewayOrder($locked, $txnAmount, $utr, $orderId, $ctime, $creditMode);
 
             if ($result['already'] ?? false) {
-                return response()->json([
-                    'received' => true,
-                    'status' => true,
-                    'message' => 'Already processed',
-                    'report_id' => $result['report_id'] ?? null,
-                ]);
+                return $this->rojgaarPeCallbackAck();
             }
 
             if (!($result['success'] ?? false)) {
@@ -861,13 +883,7 @@ class RojgaarPeController extends Controller
                 ], 500);
             }
 
-            return response()->json([
-                'received' => true,
-                'status' => true,
-                'message' => 'Transaction successful',
-                'report_id' => $result['report_id'] ?? null,
-                'utr' => $result['utr'] ?? $utr,
-            ]);
+            return $this->rojgaarPeCallbackAck();
         });
     }
 

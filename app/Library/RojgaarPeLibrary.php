@@ -147,7 +147,14 @@ namespace App\library {
             $status = self::normalizePayinWebhookStatus($statusRaw);
             $utr = (string)($payload['utr'] ?? $payload['UTR'] ?? '');
             $amount = $payload['amount'] ?? 0;
-            $providerTxn = (string)($payload['provider_txn'] ?? $payload['provider_txn_id'] ?? $payload['txn_id'] ?? '');
+            // RojgaarPe docs use provider_txnid; also accept provider_txn / provider_txn_id
+            $providerTxn = (string)(
+                $payload['provider_txnid']
+                ?? $payload['provider_txn_id']
+                ?? $payload['provider_txn']
+                ?? $payload['txn_id']
+                ?? ''
+            );
 
             $payload['merchant_refid'] = $merchantRef;
             $payload['merchantOrderNo'] = $merchantRef;
@@ -159,6 +166,8 @@ namespace App\library {
             $payload['amount'] = is_numeric($amount) ? (float)$amount : 0;
             $payload['orderId'] = $providerTxn;
             $payload['provider_txn'] = $providerTxn;
+            $payload['provider_txnid'] = $providerTxn;
+            $payload['provider_txn_id'] = $providerTxn;
 
             return $payload;
         }
