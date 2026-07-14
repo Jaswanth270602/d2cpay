@@ -426,26 +426,51 @@ namespace App\library {
             }
 
             $url = $this->base_url . '/api/v2/create-intent/status';
-            $headers = [
-                'secret_key: ' . $this->payinSecretKey,
-                'Authorization: Bearer ' . $token,
-                'Content-Type: application/json',
-            ];
             $body = json_encode([
                 'loginID' => $this->loginId,
                 'merchant_refid' => $merchantRef,
             ]);
-            $response = Helpers::pay_curl_post($url, $headers, $body, 'POST');
 
-            Apiresponse::insertGetId([
-                'message' => $response,
-                'api_type' => $this->api_id,
-                'response_type' => 'status_check',
-                'request_message' => $url . '?' . $body,
-                'report_id' => $gatewayOrderId,
+            // Short timeout — infinite curl was hanging sync and dropping MySQL connections
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_HTTPHEADER => [
+                    'secret_key: ' . $this->payinSecretKey,
+                    'Authorization: Bearer ' . $token,
+                    'Content-Type: application/json',
+                ],
+                CURLOPT_POSTFIELDS => $body,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT => 12,
             ]);
+            $response = curl_exec($ch);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-            $res = json_decode($response, true);
+            if ($response === false) {
+                $response = json_encode([
+                    'status' => false,
+                    'StatusCode' => '000',
+                    'message' => 'Status API timeout/error: ' . $curlError,
+                ]);
+            }
+
+            try {
+                Apiresponse::insertGetId([
+                    'message' => $response,
+                    'api_type' => $this->api_id,
+                    'response_type' => 'status_check',
+                    'request_message' => $url . '?' . $body,
+                    'report_id' => $gatewayOrderId,
+                ]);
+            } catch (\Throwable $e) {
+                // Don't fail status sync if logging dies after a long wait
+            }
+
+            $res = json_decode((string)$response, true);
 
             return is_array($res) ? $res : [];
         }

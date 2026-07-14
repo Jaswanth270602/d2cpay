@@ -324,6 +324,13 @@ class RojgaarPeController extends Controller
             return false;
         }
 
+        // Fresh connection before any long HTTP work
+        try {
+            DB::reconnect();
+        } catch (\Throwable $e) {
+            // continue; credit path will reconnect again
+        }
+
         $sid = (int)$gatewayOrder->status_id;
         if ($sid === 9) {
             Gatewayorder::where('id', $gatewayOrder->id)->where('status_id', 9)->update(['status_id' => 3]);
@@ -335,24 +342,36 @@ class RojgaarPeController extends Controller
             return $sid === 1;
         }
 
-        $remote = $this->rpLibrary->getPayinStatus($gatewayOrder->order_token, (int)$gatewayOrder->id);
-        $parsed = $this->rpLibrary->parsePayinStatusResponse($remote);
-        $status = $parsed['status'];
+        $parsed = null;
+        $status = 'PENDING';
 
-        // Status API often returns 106 / empty while RojgaarPe dashboard is SUCCESS.
-        // Fall back to the last logged SUCCESS webhook for this order.
-        if ($status !== 'SUCCESS') {
-            $fromCallback = $this->rpLibrary->getLastSuccessfulPayinCallbackPayload(
-                (string)$gatewayOrder->order_token,
-                (int)$gatewayOrder->id
-            );
-            if ($fromCallback) {
-                $parsed = $fromCallback;
-                $status = 'SUCCESS';
-            }
+        // Prefer already-logged SUCCESS webhook first (avoids slow/broken status API)
+        $fromCallback = $this->rpLibrary->getLastSuccessfulPayinCallbackPayload(
+            (string)$gatewayOrder->order_token,
+            (int)$gatewayOrder->id
+        );
+        if ($fromCallback) {
+            $parsed = $fromCallback;
+            $status = 'SUCCESS';
+        } else {
+            $remote = $this->rpLibrary->getPayinStatus($gatewayOrder->order_token, (int)$gatewayOrder->id);
+            $parsed = $this->rpLibrary->parsePayinStatusResponse($remote);
+            $status = $parsed['status'];
         }
 
-        if ($status === 'SUCCESS') {
+        // Reconnect after HTTP — prevents "MySQL server has gone away" on commit
+        try {
+            DB::reconnect();
+        } catch (\Throwable $e) {
+            Log::warning('RojgaarPe sync DB reconnect failed', ['error' => $e->getMessage()]);
+        }
+
+        $gatewayOrder = Gatewayorder::find($gatewayOrder->id);
+        if (!$gatewayOrder || (int)$gatewayOrder->status_id !== 3) {
+            return $gatewayOrder && (int)$gatewayOrder->status_id === 1;
+        }
+
+        if ($status === 'SUCCESS' && is_array($parsed)) {
             $credited = false;
             DB::transaction(function () use ($gatewayOrder, $parsed, &$credited) {
                 $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
@@ -364,8 +383,8 @@ class RojgaarPeController extends Controller
                 $result = $this->creditGatewayOrder(
                     $locked,
                     $txnAmount,
-                    $parsed['utr'],
-                    $parsed['orderId'],
+                    (string)($parsed['utr'] ?? ''),
+                    (string)($parsed['orderId'] ?? ''),
                     now(),
                     'Status sync'
                 );
@@ -383,7 +402,7 @@ class RojgaarPeController extends Controller
         if (in_array($status, ['FAILED', 'CANCELLED', 'REFUNDED'], true)) {
             Gatewayorder::where('id', $gatewayOrder->id)
                 ->where('status_id', 3)
-                ->update(['status_id' => 2, 'remark' => $parsed['utr'] ?: $parsed['orderId']]);
+                ->update(['status_id' => 2, 'remark' => ($parsed['utr'] ?? '') ?: ($parsed['orderId'] ?? '')]);
             $gatewayOrder->refresh();
             $this->markPayinReportFailed(
                 $gatewayOrder,
