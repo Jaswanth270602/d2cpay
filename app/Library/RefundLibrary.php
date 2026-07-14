@@ -37,7 +37,7 @@ namespace App\library {
 
         function update_transaction($status_id, $txnid, $insert_id, $mode)
         {
-            $reports = Report::where('id', $insert_id)->whereIn('status_id', [1, 2, 3])->first();
+            $reports = Report::where('id', $insert_id)->whereIn('status_id', [1, 2, 3, 6])->first();
             if ($reports) {
                 $user_id = $reports->user_id;
                 $profit = $reports->profit;
@@ -228,6 +228,9 @@ namespace App\library {
                     Self::return_parent_commission($insert_id, $mode);
                     Self::solve_dispte($insert_id, $txnid);
                     return Response()->json(['status' => 'success', 'message' => 'Transaction Refund Successfully']);
+                } elseif (in_array((int)$oldstatus_id, [1, 6], true) && (int)$status_id === 1 && $isAddMoneyPayin) {
+                    // Repair Success/Credit rows that never updated Payin Bal
+                    return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
                 } else {
                     return Response()->json(['status' => 'failure', 'message' => 'Sorry ! if u want this feature kindly contact tech team']);
                 }
@@ -297,8 +300,29 @@ namespace App\library {
                 return true;
             }
 
-            // Payin 9 / Payin 10 providers
-            return in_array((int)$report->provider_id, [340, 341], true);
+            // Payin 9 (QPC api 16 / provider 340) / Payin 10 (RojgaarPe api 17 / provider 341)
+            if (in_array((int)$report->provider_id, [340, 341], true)) {
+                return true;
+            }
+
+            return in_array((int)$report->api_id, [16, 17], true);
+        }
+
+        /**
+         * Report already had Payin Bal credited (closing moved vs opening).
+         */
+        private function addMoneyPayinAlreadyCredited(Report $report): bool
+        {
+            $status = (int)$report->status_id;
+            if (!in_array($status, [1, 6], true)) {
+                return false;
+            }
+            if ((float)$report->amount <= 0) {
+                return $status === 6;
+            }
+            $opening = (float)($report->opening_balance ?? 0);
+            $closing = (float)($report->total_balance ?? 0);
+            return abs($closing - $opening) > 0.001;
         }
 
         private function syncGatewayOrderAfterManualUpdate(int $reportId, int $statusId, string $remark = ''): void
@@ -361,6 +385,24 @@ namespace App\library {
             $client_id = $reports->client_id;
             $api_id = (int)($reports->api_id ?? 0);
 
+            // Already credited properly — only sync gateway + UTR, do not double-credit
+            if ($this->addMoneyPayinAlreadyCredited($reports)) {
+                if ($txnid !== '' && $txnid !== null) {
+                    Report::where('id', $insert_id)->update([
+                        'status_id' => 6,
+                        'txnid' => $txnid,
+                        'wallet_type' => 2,
+                    ]);
+                } elseif ((int)$reports->status_id !== 6) {
+                    Report::where('id', $insert_id)->update(['status_id' => 6, 'wallet_type' => 2]);
+                }
+                $this->syncGatewayOrderAfterManualUpdate($insert_id, 1, (string)$txnid);
+                return Response()->json([
+                    'status' => 'success',
+                    'message' => 'Transaction already credited. Gateway synced.',
+                ]);
+            }
+
             $userdetails = User::find($user_id);
             $scheme_id = $userdetails->scheme_id ?? 0;
             $commissionLibrary = new GetcommissionLibrary();
@@ -371,6 +413,14 @@ namespace App\library {
             $sales_team = $commission['sales_team'] ?? 0;
             $referral = $commission['referral'] ?? 0;
             $creditAmount = (float)$amount - (float)$retailer;
+
+            if (!Balance::where('user_id', $user_id)->exists()) {
+                Balance::insert([
+                    'user_id' => $user_id,
+                    'aeps_balance' => 0,
+                    'user_balance' => 0,
+                ]);
+            }
 
             $opening_balance = Balance::where('user_id', $user_id)->value('aeps_balance') ?? 0;
             Balance::where('user_id', $user_id)->increment('aeps_balance', $creditAmount);
@@ -436,7 +486,7 @@ namespace App\library {
 
         function update_transaction_aeps($status_id, $txnid, $insert_id, $mode)
         {
-            $reports = Report::where('id', $insert_id)->whereIn('status_id', [1, 2, 3])->first();
+            $reports = Report::where('id', $insert_id)->whereIn('status_id', [1, 2, 3, 6])->first();
             if ($reports) {
                 $user_id = $reports->user_id;
                 $profit = $reports->profit;
@@ -526,6 +576,7 @@ namespace App\library {
                         return Response()->json(['status' => 'success', 'message' => 'Transaction status successfully updpated']);
                     }
                 } elseif ($oldstatus_id == 1 && $status_id == 1) {
+                    // Already Success without Payin credit — credit now
                     if ($isAddMoneyPayin) {
                         return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
                     }
@@ -547,6 +598,9 @@ namespace App\library {
                     $commission = $library->parent_recharge_commission($user_id, $number, $insert_id, $provider_id, $profit, $amount, $api_id);
                     Self::solve_dispte($insert_id, $txnid);
                     return Response()->json(['status' => 'success', 'message' => 'Transaction status successfully updpated']);
+                } elseif (in_array((int)$oldstatus_id, [1, 6], true) && (int)$status_id === 1 && $isAddMoneyPayin) {
+                    // Repair Success/Credit rows that never updated Payin Bal
+                    return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
                 } else {
                     return Response()->json(['status' => 'failure', 'message' => 'Sorry ! if u want this feature kindly contact tech team']);
                 }

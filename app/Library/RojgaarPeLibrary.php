@@ -480,6 +480,76 @@ namespace App\library {
             return null;
         }
 
+        /**
+         * Recover SUCCESS details from the last logged payin webhook when status API fails (e.g. 106).
+         */
+        public function getLastSuccessfulPayinCallbackPayload(string $merchantRef, ?int $gatewayOrderId = null): ?array
+        {
+            if ($merchantRef === '' && !$gatewayOrderId) {
+                return null;
+            }
+
+            $query = Apiresponse::where('api_type', $this->api_id)
+                ->where('response_type', 'call_back')
+                ->orderBy('id', 'DESC');
+
+            if ($gatewayOrderId) {
+                $query->where(function ($q) use ($gatewayOrderId, $merchantRef) {
+                    $q->where('report_id', $gatewayOrderId);
+                    if ($merchantRef !== '') {
+                        $q->orWhere('request_message', 'like', '%' . $merchantRef . '%')
+                            ->orWhere('message', 'like', '%' . $merchantRef . '%');
+                    }
+                });
+            } elseif ($merchantRef !== '') {
+                $query->where(function ($q) use ($merchantRef) {
+                    $q->where('request_message', 'like', '%' . $merchantRef . '%')
+                        ->orWhere('message', 'like', '%' . $merchantRef . '%');
+                });
+            }
+
+            $rows = $query->limit(10)->get();
+            foreach ($rows as $row) {
+                $candidates = [];
+                $raw = json_decode((string)$row->request_message, true);
+                if (is_array($raw)) {
+                    $candidates[] = $raw;
+                }
+                $audit = json_decode((string)$row->message, true);
+                if (is_array($audit)) {
+                    if (isset($audit['parsed']) && is_array($audit['parsed'])) {
+                        $candidates[] = $audit['parsed'];
+                    }
+                    if (isset($audit['raw']) && is_string($audit['raw'])) {
+                        $decodedRaw = json_decode($audit['raw'], true);
+                        if (is_array($decodedRaw)) {
+                            $candidates[] = $decodedRaw;
+                        }
+                    }
+                }
+
+                foreach ($candidates as $payload) {
+                    $normalized = self::normalizePayinPayload($payload);
+                    $ref = (string)($normalized['merchant_refid'] ?? '');
+                    if ($merchantRef !== '' && $ref !== '' && $ref !== $merchantRef) {
+                        continue;
+                    }
+                    if (($normalized['status'] ?? '') === 'SUCCESS') {
+                        return [
+                            'status' => 'SUCCESS',
+                            'utr' => (string)($normalized['utr'] ?? ''),
+                            'orderId' => (string)($normalized['orderId'] ?? $normalized['provider_txnid'] ?? ''),
+                            'amount' => (float)($normalized['amount'] ?? 0),
+                            'remark' => 'Recovered from webhook log',
+                            'merchant_refid' => $ref ?: $merchantRef,
+                        ];
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public function transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id)
         {
             if ($this->payoutSecretKey === '' || $this->loginId === '') {

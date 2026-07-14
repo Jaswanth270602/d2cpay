@@ -106,6 +106,33 @@ class RojgaarPeController extends Controller
             ->update($updates);
     }
 
+    /**
+     * True when report already received Payin wallet credit (balances moved).
+     * Status 1 with opening==closing is a broken manual success — needs credit.
+     */
+    private function reportAlreadyCredited(?Report $report): bool
+    {
+        if (!$report) {
+            return false;
+        }
+        $status = (int)$report->status_id;
+        if ($status === 6) {
+            $opening = (float)($report->opening_balance ?? 0);
+            $closing = (float)($report->total_balance ?? 0);
+            // Proper credit always moves closing away from opening when amount > 0
+            if ((float)$report->amount <= 0) {
+                return true;
+            }
+            return abs($closing - $opening) > 0.001;
+        }
+        if ($status === 1) {
+            $opening = (float)($report->opening_balance ?? 0);
+            $closing = (float)($report->total_balance ?? 0);
+            return abs($closing - $opening) > 0.001;
+        }
+        return false;
+    }
+
     private function creditGatewayOrder(Gatewayorder $gatewayOrder, float $txnAmount, string $utr, string $orderId, $ctime, string $creditMode = 'Call-back'): array
     {
         if ((int)$gatewayOrder->status_id === 1) {
@@ -122,12 +149,18 @@ class RojgaarPeController extends Controller
         $existingReportId = (int)($gatewayOrder->report_id ?? 0);
         $existingReport = $existingReportId > 0 ? Report::find($existingReportId) : null;
 
-        if ($existingReport && in_array((int)$existingReport->status_id, [1, 6], true)) {
+        if ($this->reportAlreadyCredited($existingReport)) {
+            Gatewayorder::where('id', $gatewayOrder->id)
+                ->whereIn('status_id', [3, 9])
+                ->update([
+                    'status_id' => 1,
+                    'remark' => $utr ?: ($orderId ?: ($gatewayOrder->remark ?? '')),
+                ]);
             return ['success' => true, 'report_id' => $existingReportId, 'already' => true];
         }
 
         if (!empty($utr)) {
-            $duplicateQuery = Report::where('txnid', $utr);
+            $duplicateQuery = Report::where('txnid', $utr)->whereIn('status_id', [1, 6]);
             if ($existingReportId > 0) {
                 $duplicateQuery->where('id', '!=', $existingReportId);
             }
@@ -145,7 +178,17 @@ class RojgaarPeController extends Controller
             return ['success' => false, 'message' => 'User not found'];
         }
 
-        $opening_balance = $user->balance->aeps_balance ?? 0;
+        // Ensure balance row exists
+        $balanceRow = Balance::where('user_id', $user->id)->first();
+        if (!$balanceRow) {
+            Balance::insert([
+                'user_id' => $user->id,
+                'aeps_balance' => 0,
+                'user_balance' => 0,
+            ]);
+        }
+
+        $opening_balance = (float)(Balance::where('user_id', $user->id)->value('aeps_balance') ?? 0);
         $commissionLibrary = new GetcommissionLibrary();
         $commission = $commissionLibrary->get_commission($user->scheme_id, $this->provider_id, $txnAmount);
         $retailer = $commission['retailer'] ?? 0;
@@ -156,7 +199,7 @@ class RojgaarPeController extends Controller
         $creditAmount = $txnAmount - $retailer;
 
         Balance::where('user_id', $user->id)->increment('aeps_balance', $creditAmount);
-        $newBalance = Balance::where('user_id', $user->id)->value('aeps_balance');
+        $newBalance = (float)Balance::where('user_id', $user->id)->value('aeps_balance');
 
         $txnIdForReport = $utr ?: ($orderId ?: $gatewayOrder->order_token);
         $description = 'Add Money via RojgaarPe';
@@ -164,7 +207,11 @@ class RojgaarPeController extends Controller
             $description .= ' (' . $creditMode . ')';
         }
 
-        if ($existingReport && (int)$existingReport->status_id === 3) {
+        // Update pending (3) or broken success-without-credit (1 / empty 6)
+        $canUpdateExisting = $existingReport && in_array((int)$existingReport->status_id, [1, 3, 6], true)
+            && !$this->reportAlreadyCredited($existingReport);
+
+        if ($canUpdateExisting) {
             $reportId = $existingReportId;
             Report::where('id', $reportId)->update([
                 'status_id' => 6,
@@ -175,6 +222,7 @@ class RojgaarPeController extends Controller
                 'opening_balance' => $opening_balance,
                 'total_balance' => $newBalance,
                 'payid' => $orderId ?: ($existingReport->payid ?? ''),
+                'wallet_type' => 2,
             ]);
         } else {
             $reportId = Report::insertGetId([
@@ -291,6 +339,19 @@ class RojgaarPeController extends Controller
         $parsed = $this->rpLibrary->parsePayinStatusResponse($remote);
         $status = $parsed['status'];
 
+        // Status API often returns 106 / empty while RojgaarPe dashboard is SUCCESS.
+        // Fall back to the last logged SUCCESS webhook for this order.
+        if ($status !== 'SUCCESS') {
+            $fromCallback = $this->rpLibrary->getLastSuccessfulPayinCallbackPayload(
+                (string)$gatewayOrder->order_token,
+                (int)$gatewayOrder->id
+            );
+            if ($fromCallback) {
+                $parsed = $fromCallback;
+                $status = 'SUCCESS';
+            }
+        }
+
         if ($status === 'SUCCESS') {
             $credited = false;
             DB::transaction(function () use ($gatewayOrder, $parsed, &$credited) {
@@ -308,7 +369,7 @@ class RojgaarPeController extends Controller
                     now(),
                     'Status sync'
                 );
-                $credited = (bool)($result['success'] ?? false);
+                $credited = (bool)($result['success'] ?? false) || (bool)($result['already'] ?? false);
                 if (!$credited) {
                     Log::error('RojgaarPe payin status sync credit failed', [
                         'order_id' => $locked->id,
@@ -835,21 +896,17 @@ class RojgaarPeController extends Controller
             return $this->rojgaarPeCallbackAck();
         }
 
-        // Prefer UTR / amount / provider id from webhook; optionally enrich via status API
+        // Trust webhook SUCCESS + amount/UTR. Do NOT block on status API
+        // (RojgaarPe often returns StatusCode 106 while dashboard already shows Success).
         $verifiedViaApi = false;
-        $confirmed = $this->rpLibrary->confirmPayinSuccessFromApi($merchantOrderNo, (int)$gatewayOrder->id);
-        if ($confirmed) {
-            $verifiedViaApi = true;
-            $payload = array_merge($payload, [
-                'status' => 'SUCCESS',
-                'orderStatus' => 'SUCCESS',
-                'utr' => (string)($confirmed['utr'] ?? $payload['utr'] ?? ''),
-                'amount' => (float)($confirmed['amount'] ?? $payload['amount'] ?? 0),
-                'orderId' => (string)($confirmed['orderId'] ?? $payload['orderId'] ?? ''),
-            ]);
-            $utr = (string)($payload['utr'] ?? '');
-            $orderId = (string)($payload['orderId'] ?? '');
-            $amount = (float)($payload['amount'] ?? 0);
+        if ($utr === '' || $amount <= 0 || $orderId === '') {
+            $confirmed = $this->rpLibrary->confirmPayinSuccessFromApi($merchantOrderNo, (int)$gatewayOrder->id);
+            if ($confirmed) {
+                $verifiedViaApi = true;
+                $utr = $utr !== '' ? $utr : (string)($confirmed['utr'] ?? '');
+                $orderId = $orderId !== '' ? $orderId : (string)($confirmed['orderId'] ?? '');
+                $amount = $amount > 0 ? $amount : (float)($confirmed['amount'] ?? 0);
+            }
         }
 
         return DB::transaction(function () use ($gatewayOrder, $amount, $utr, $orderId, $ctime, $verifiedViaApi) {
