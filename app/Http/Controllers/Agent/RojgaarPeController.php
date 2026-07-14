@@ -133,7 +133,68 @@ class RojgaarPeController extends Controller
         return false;
     }
 
-    private function creditGatewayOrder(Gatewayorder $gatewayOrder, float $txnAmount, string $utr, string $orderId, $ctime, string $creditMode = 'Call-back'): array
+    /**
+     * Merchant/member HTTP callbacks — must run OUTSIDE DB transactions
+     * (long curls cause "MySQL server has gone away" on commit).
+     */
+    private function sendPayinCreditNotifications(array $notify): void
+    {
+        $userId = (int)($notify['user_id'] ?? 0);
+        $callbackUrl = (string)($notify['callback_url'] ?? '');
+        $ctime = $notify['ctime'] ?? now();
+        $amount = (float)($notify['amount'] ?? 0);
+        $utr = (string)($notify['utr'] ?? '');
+        $clientId = (string)($notify['client_id'] ?? '');
+        $gatewayOrderId = (int)($notify['gateway_order_id'] ?? 0);
+        $mobile = (string)($notify['mobile'] ?? '');
+        $apiToken = (string)($notify['api_token'] ?? '');
+
+        if ($callbackUrl !== '') {
+            try {
+                $queryParams = [
+                    'status' => 'credit',
+                    'client_id' => $clientId,
+                    'amount' => $amount,
+                    'utr' => $utr,
+                    'txnid' => $gatewayOrderId,
+                ];
+                $signatureString = http_build_query($queryParams);
+                $queryParams['signature'] = hash_hmac('sha256', $signatureString, $apiToken);
+                $cbUrl = $callbackUrl . '?' . http_build_query($queryParams);
+                $cbResponse = Helpers::pay_curl_get($cbUrl);
+                try {
+                    DB::reconnect();
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+                Traceurl::insertGetId([
+                    'user_id' => $userId,
+                    'url' => $cbUrl,
+                    'number' => $mobile,
+                    'response_message' => $cbResponse,
+                    'created_at' => $ctime,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('RojgaarPe merchant callback failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        try {
+            $this->forwardMemberCallback(
+                $userId,
+                'credit',
+                $clientId,
+                $amount,
+                $utr,
+                $gatewayOrderId,
+                $ctime
+            );
+        } catch (\Exception $e) {
+            Log::error('RojgaarPe member callback failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function creditGatewayOrder(Gatewayorder $gatewayOrder, float $txnAmount, string $utr, string $orderId, $ctime, string $creditMode = 'Call-back', bool $sendNotifications = true): array
     {
         if ((int)$gatewayOrder->status_id === 1) {
             return ['success' => true, 'report_id' => $gatewayOrder->report_id, 'already' => true];
@@ -276,46 +337,28 @@ class RojgaarPeController extends Controller
             Log::error('RojgaarPe payin commission failed', ['error' => $e->getMessage()]);
         }
 
-        if (!empty($gatewayOrder->callback_url)) {
-            try {
-                $queryParams = [
-                    'status' => 'credit',
-                    'client_id' => $gatewayOrder->client_id,
-                    'amount' => $txnAmount,
-                    'utr' => $utr,
-                    'txnid' => $gatewayOrder->id,
-                ];
-                $signatureString = http_build_query($queryParams);
-                $queryParams['signature'] = hash_hmac('sha256', $signatureString, $user->api_token);
-                $cbUrl = $gatewayOrder->callback_url . '?' . http_build_query($queryParams);
-                $cbResponse = Helpers::pay_curl_get($cbUrl);
-                Traceurl::insertGetId([
-                    'user_id' => $user->id,
-                    'url' => $cbUrl,
-                    'number' => $user->mobile,
-                    'response_message' => $cbResponse,
-                    'created_at' => $ctime,
-                ]);
-            } catch (\Exception $e) {
-                Log::error('RojgaarPe merchant callback failed', ['error' => $e->getMessage()]);
-            }
+        $notify = [
+            'user_id' => $user->id,
+            'api_token' => $user->api_token,
+            'mobile' => $user->mobile,
+            'callback_url' => $gatewayOrder->callback_url ?? '',
+            'client_id' => $gatewayOrder->client_id ?: $gatewayOrder->order_token,
+            'gateway_order_id' => $gatewayOrder->id,
+            'amount' => $txnAmount,
+            'utr' => $utr,
+            'ctime' => $ctime,
+        ];
+
+        if ($sendNotifications) {
+            $this->sendPayinCreditNotifications($notify);
         }
 
-        try {
-            $this->forwardMemberCallback(
-                $user->id,
-                'credit',
-                $gatewayOrder->client_id ?: $gatewayOrder->order_token,
-                $txnAmount,
-                $utr,
-                $gatewayOrder->id,
-                $ctime
-            );
-        } catch (\Exception $e) {
-            Log::error('RojgaarPe member callback failed', ['error' => $e->getMessage()]);
-        }
-
-        return ['success' => true, 'report_id' => $reportId, 'utr' => $txnIdForReport];
+        return [
+            'success' => true,
+            'report_id' => $reportId,
+            'utr' => $txnIdForReport,
+            'notify' => $notify,
+        ];
     }
 
     public function syncPendingOrderFromProvider(Gatewayorder $gatewayOrder): bool
@@ -372,30 +415,61 @@ class RojgaarPeController extends Controller
         }
 
         if ($status === 'SUCCESS' && is_array($parsed)) {
+            $notify = null;
             $credited = false;
-            DB::transaction(function () use ($gatewayOrder, $parsed, &$credited) {
-                $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
-                if (!$locked || (int)$locked->status_id !== 3) {
-                    $credited = (int)($locked->status_id ?? 0) === 1;
-                    return;
+
+            try {
+                DB::transaction(function () use ($gatewayOrder, $parsed, &$credited, &$notify) {
+                    $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
+                    if (!$locked || (int)$locked->status_id !== 3) {
+                        $credited = (int)($locked->status_id ?? 0) === 1;
+                        return;
+                    }
+                    $txnAmount = $parsed['amount'] > 0 ? $parsed['amount'] : (float)$locked->amount;
+                    // Defer HTTP notifications until AFTER commit
+                    $result = $this->creditGatewayOrder(
+                        $locked,
+                        $txnAmount,
+                        (string)($parsed['utr'] ?? ''),
+                        (string)($parsed['orderId'] ?? ''),
+                        now(),
+                        'Status sync',
+                        false
+                    );
+                    $credited = (bool)($result['success'] ?? false) || (bool)($result['already'] ?? false);
+                    if (!empty($result['notify'])) {
+                        $notify = $result['notify'];
+                    }
+                    if (!$credited) {
+                        Log::error('RojgaarPe payin status sync credit failed', [
+                            'order_id' => $locked->id,
+                            'message' => $result['message'] ?? 'unknown',
+                        ]);
+                    }
+                });
+            } catch (\Throwable $e) {
+                Log::error('RojgaarPe sync credit transaction failed', [
+                    'order_id' => $gatewayOrder->id,
+                    'error' => $e->getMessage(),
+                ]);
+                try {
+                    DB::reconnect();
+                    Gatewayorder::where('id', $gatewayOrder->id)->where('status_id', 9)->update(['status_id' => 3]);
+                } catch (\Throwable $inner) {
+                    // ignore
                 }
-                $txnAmount = $parsed['amount'] > 0 ? $parsed['amount'] : (float)$locked->amount;
-                $result = $this->creditGatewayOrder(
-                    $locked,
-                    $txnAmount,
-                    (string)($parsed['utr'] ?? ''),
-                    (string)($parsed['orderId'] ?? ''),
-                    now(),
-                    'Status sync'
-                );
-                $credited = (bool)($result['success'] ?? false) || (bool)($result['already'] ?? false);
-                if (!$credited) {
-                    Log::error('RojgaarPe payin status sync credit failed', [
-                        'order_id' => $locked->id,
-                        'message' => $result['message'] ?? 'unknown',
-                    ]);
+                return false;
+            }
+
+            if ($credited && is_array($notify)) {
+                try {
+                    DB::reconnect();
+                } catch (\Throwable $e) {
+                    // ignore
                 }
-            });
+                $this->sendPayinCreditNotifications($notify);
+            }
+
             return $credited;
         }
 
@@ -928,36 +1002,71 @@ class RojgaarPeController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($gatewayOrder, $amount, $utr, $orderId, $ctime, $verifiedViaApi) {
-            $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
-            if (!$locked) {
-                return response()->json(['received' => false, 'status' => false, 'message' => 'Order not found'], 404);
+        $notify = null;
+        $ack = null;
+
+        try {
+            DB::transaction(function () use ($gatewayOrder, $amount, $utr, $orderId, $ctime, $verifiedViaApi, &$notify, &$ack) {
+                $locked = Gatewayorder::where('id', $gatewayOrder->id)->lockForUpdate()->first();
+                if (!$locked) {
+                    $ack = response()->json(['received' => false, 'status' => false, 'message' => 'Order not found'], 404);
+                    return;
+                }
+
+                if ((int)$locked->status_id === 1) {
+                    $ack = $this->rojgaarPeCallbackAck();
+                    return;
+                }
+
+                $txnAmount = $amount > 0 ? $amount : (float)$locked->amount;
+                $creditMode = $verifiedViaApi ? 'Status-sync' : 'Call-back';
+                $result = $this->creditGatewayOrder($locked, $txnAmount, $utr, $orderId, $ctime, $creditMode, false);
+
+                if ($result['already'] ?? false) {
+                    $ack = $this->rojgaarPeCallbackAck();
+                    return;
+                }
+
+                if (!($result['success'] ?? false)) {
+                    Log::error('RojgaarPe payin callback credit failed', [
+                        'order_id' => $locked->id,
+                        'message' => $result['message'] ?? 'unknown',
+                    ]);
+                    $ack = $this->rojgaarPeCallbackAck();
+                    return;
+                }
+
+                if (!empty($result['notify'])) {
+                    $notify = $result['notify'];
+                }
+                $ack = $this->rojgaarPeCallbackAck();
+            });
+        } catch (\Throwable $e) {
+            Log::error('RojgaarPe payin callback transaction failed', [
+                'order_id' => $gatewayOrder->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            try {
+                DB::reconnect();
+                if (!empty($gatewayOrder->id)) {
+                    Gatewayorder::where('id', $gatewayOrder->id)->where('status_id', 9)->update(['status_id' => 3]);
+                }
+            } catch (\Throwable $inner) {
+                // ignore
             }
-
-            // Duplicate SUCCESS: acknowledge 200 without re-crediting
-            if ((int)$locked->status_id === 1) {
-                return $this->rojgaarPeCallbackAck();
-            }
-
-            $txnAmount = $amount > 0 ? $amount : (float)$locked->amount;
-            $creditMode = $verifiedViaApi ? 'Status-sync' : 'Call-back';
-            $result = $this->creditGatewayOrder($locked, $txnAmount, $utr, $orderId, $ctime, $creditMode);
-
-            if ($result['already'] ?? false) {
-                return $this->rojgaarPeCallbackAck();
-            }
-
-            if (!($result['success'] ?? false)) {
-                Log::error('RojgaarPe payin callback credit failed', [
-                    'order_id' => $locked->id,
-                    'message' => $result['message'] ?? 'unknown',
-                ]);
-                // Still ack 200 so provider does not hammer retries while we investigate
-                return $this->rojgaarPeCallbackAck();
-            }
-
             return $this->rojgaarPeCallbackAck();
-        });
+        }
+
+        if (is_array($notify)) {
+            try {
+                DB::reconnect();
+            } catch (\Throwable $e) {
+                // ignore
+            }
+            $this->sendPayinCreditNotifications($notify);
+        }
+
+        return $ack ?: $this->rojgaarPeCallbackAck();
     }
 
     public function statusEnquiryApi(Request $request)

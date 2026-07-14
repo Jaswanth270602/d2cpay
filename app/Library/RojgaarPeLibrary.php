@@ -514,26 +514,26 @@ namespace App\library {
                 return null;
             }
 
-            $query = Apiresponse::where('api_type', $this->api_id)
-                ->where('response_type', 'call_back')
-                ->orderBy('id', 'DESC');
-
+            // Fast path: match by gateway order id only (indexed report_id), avoid LIKE on huge text
+            $rows = collect();
             if ($gatewayOrderId) {
-                $query->where(function ($q) use ($gatewayOrderId, $merchantRef) {
-                    $q->where('report_id', $gatewayOrderId);
-                    if ($merchantRef !== '') {
-                        $q->orWhere('request_message', 'like', '%' . $merchantRef . '%')
-                            ->orWhere('message', 'like', '%' . $merchantRef . '%');
-                    }
-                });
-            } elseif ($merchantRef !== '') {
-                $query->where(function ($q) use ($merchantRef) {
-                    $q->where('request_message', 'like', '%' . $merchantRef . '%')
-                        ->orWhere('message', 'like', '%' . $merchantRef . '%');
-                });
+                $rows = Apiresponse::where('api_type', $this->api_id)
+                    ->where('response_type', 'call_back')
+                    ->where('report_id', $gatewayOrderId)
+                    ->orderBy('id', 'DESC')
+                    ->limit(5)
+                    ->get();
             }
 
-            $rows = $query->limit(10)->get();
+            if ($rows->isEmpty() && $merchantRef !== '') {
+                $rows = Apiresponse::where('api_type', $this->api_id)
+                    ->where('response_type', 'call_back')
+                    ->where('request_message', 'like', '%' . $merchantRef . '%')
+                    ->orderBy('id', 'DESC')
+                    ->limit(5)
+                    ->get();
+            }
+
             foreach ($rows as $row) {
                 $candidates = [];
                 $raw = json_decode((string)$row->request_message, true);
