@@ -55,8 +55,14 @@ namespace App\library {
                 $now = new \DateTime();
                 $ctime = $now->format('Y-m-d H:i:s');
                 $api_id = 0;
+                $isAddMoneyPayin = $this->isAddMoneyPayinReport($reports);
                 if ($oldstatus_id == 3) {
                     if ($status_id == 2) {
+                        // Add-money payin: never debited normal wallet — mark failed only, no refund credit
+                        if ($isAddMoneyPayin) {
+                            return $this->markAddMoneyPayinFailedManual($reports, $txnid, $call_back_url, $ctime);
+                        }
+
                         Report::where('id', $insert_id)->update(['status_id' => 5, 'txnid' => $txnid]);
                         Commissionreport::where('report_id', $insert_id)->update(['status_id' => 2]);
                         $balanace = Balance::where('user_id', $user_id)->first();
@@ -98,6 +104,11 @@ namespace App\library {
                         Self::solve_dispte($insert_id, $txnid);
                         return Response()->json(['status' => 'success', 'message' => 'Transaction Refund Successfully']);
                     } elseif ($status_id == 1) {
+                        // Add-money payin via Normal Wallet modal: still credit Payin Bal (aeps_balance)
+                        if ($isAddMoneyPayin) {
+                            return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
+                        }
+
                         Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $txnid]);
                         Commissionreport::where('report_id', $insert_id)->update(['status_id' => 1]);
                         if ($call_back_url) {
@@ -138,6 +149,11 @@ namespace App\library {
                         return Response()->json(['status' => 'success', 'message' => 'Transaction status successfully updpated']);
                     }
                 } elseif ($oldstatus_id == 1 && $status_id == 1) {
+                    // Already Success without Payin credit (old Normal Wallet path) — credit now
+                    if ($isAddMoneyPayin) {
+                        return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
+                    }
+
                     Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $txnid]);
                     Commissionreport::where('report_id', $insert_id)->update(['status_id' => 1]);
                     if ($call_back_url) {
@@ -166,6 +182,11 @@ namespace App\library {
                     $this->solve_dispte($insert_id, $txnid);
                     return Response()->json(['status' => 'success', 'message' => 'Transaction status successfully updpated']);
                 } elseif ($oldstatus_id == 1 && $status_id == 2) {
+                    // Add-money payin never debited normal wallet — do not refund user_balance
+                    if ($isAddMoneyPayin) {
+                        return $this->markAddMoneyPayinFailedManual($reports, $txnid, $call_back_url, $ctime);
+                    }
+
                     Report::where('id', $insert_id)->update(['status_id' => 5, 'txnid' => $txnid]);
                     Commissionreport::where('report_id', $insert_id)->update(['status_id' => 2]);
                     $balanace = Balance::where('user_id', $user_id)->first();
@@ -291,6 +312,128 @@ namespace App\library {
                 ->update($updates);
         }
 
+        /**
+         * Manual pending → failure for add-money payin (no wallet debit / no false refund).
+         */
+        private function markAddMoneyPayinFailedManual(Report $reports, $txnid, $call_back_url, $ctime)
+        {
+            $insert_id = $reports->id;
+            $user_id = $reports->user_id;
+            $number = $reports->number;
+            $provider_id = $reports->provider_id;
+            $client_id = $reports->client_id;
+
+            Report::where('id', $insert_id)->update([
+                'status_id' => 2,
+                'txnid' => $txnid,
+                'reason' => 'Payment failed',
+            ]);
+            $this->syncGatewayOrderAfterManualUpdate($insert_id, 2, (string)$txnid);
+
+            if ($call_back_url) {
+                $txnidEnc = urlencode((string)$txnid);
+                $url = "$call_back_url?payid=$insert_id&status=failure&operator_ref=$txnidEnc&client_id=$client_id&number=$number&provider_id=$provider_id&wallet_type=2";
+                $response = Self::send_to_curl($url);
+                Traceurl::insertGetId([
+                    'user_id' => $user_id,
+                    'url' => $url,
+                    'number' => $number,
+                    'response_message' => $response,
+                    'created_at' => $ctime
+                ]);
+            }
+
+            Self::solve_dispte($insert_id, $txnid);
+            return Response()->json(['status' => 'success', 'message' => 'Transaction marked as failed']);
+        }
+
+        /**
+         * Manual pending → success for add-money payin: credit aeps_balance (Payin Bal).
+         * Used from both Normal Wallet and AEPS Wallet admin update paths.
+         */
+        private function creditAddMoneyPayinManual(Report $reports, $txnid, $mode, $call_back_url, $ctime)
+        {
+            $insert_id = $reports->id;
+            $user_id = $reports->user_id;
+            $amount = $reports->amount;
+            $provider_id = $reports->provider_id;
+            $number = $reports->number;
+            $client_id = $reports->client_id;
+            $api_id = (int)($reports->api_id ?? 0);
+
+            $userdetails = User::find($user_id);
+            $scheme_id = $userdetails->scheme_id ?? 0;
+            $commissionLibrary = new GetcommissionLibrary();
+            $commission = $commissionLibrary->get_commission($scheme_id, $provider_id, $amount);
+            $retailer = $commission['retailer'] ?? 0;
+            $distributor = $commission['distributor'] ?? 0;
+            $sdistributor = $commission['sdistributor'] ?? 0;
+            $sales_team = $commission['sales_team'] ?? 0;
+            $referral = $commission['referral'] ?? 0;
+            $creditAmount = (float)$amount - (float)$retailer;
+
+            $opening_balance = Balance::where('user_id', $user_id)->value('aeps_balance') ?? 0;
+            Balance::where('user_id', $user_id)->increment('aeps_balance', $creditAmount);
+            $newBalance = Balance::where('user_id', $user_id)->value('aeps_balance');
+
+            $description = (string)($reports->description ?: 'Add Money');
+            if ($mode !== '') {
+                $description .= ' (Manual ' . $mode . ')';
+            }
+
+            Report::where('id', $insert_id)->update([
+                'status_id' => 6,
+                'txnid' => $txnid,
+                'profit' => '-' . $retailer,
+                'amount' => $amount,
+                'description' => $description,
+                'opening_balance' => $opening_balance,
+                'total_balance' => $newBalance,
+                'wallet_type' => 2,
+            ]);
+            $this->syncGatewayOrderAfterManualUpdate($insert_id, 1, (string)$txnid);
+
+            if ($call_back_url) {
+                $txnidEnc = urlencode((string)$txnid);
+                $url = "$call_back_url?status=credit&client_id=" . urlencode((string)$client_id)
+                    . "&amount=" . urlencode((string)$amount)
+                    . "&utr=$txnidEnc&txnid=$insert_id";
+                $response = Self::send_to_curl($url);
+                Traceurl::insertGetId([
+                    'user_id' => $user_id,
+                    'url' => $url,
+                    'number' => $number,
+                    'response_message' => $response,
+                    'created_at' => $ctime
+                ]);
+            }
+
+            try {
+                $library = new Commission_increment();
+                $library->parent_recharge_commission(
+                    $user_id,
+                    $number,
+                    $insert_id,
+                    $provider_id,
+                    $amount,
+                    $api_id,
+                    $retailer,
+                    $distributor,
+                    $sdistributor,
+                    $sales_team,
+                    $referral
+                );
+            } catch (\Exception $e) {
+                // Keep credit even if commission posting fails
+            }
+
+            Self::solve_dispte($insert_id, $txnid);
+            return Response()->json([
+                'status' => 'success',
+                'message' => 'Transaction credited successfully. Payin balance updated.',
+            ]);
+        }
+
         function update_transaction_aeps($status_id, $txnid, $insert_id, $mode)
         {
             $reports = Report::where('id', $insert_id)->whereIn('status_id', [1, 2, 3])->first();
@@ -316,26 +459,7 @@ namespace App\library {
                     if ($status_id == 2) {
                         // Add-money payin: wallet was never debited — mark failed only
                         if ($isAddMoneyPayin) {
-                            Report::where('id', $insert_id)->update([
-                                'status_id' => 2,
-                                'txnid' => $txnid,
-                                'reason' => 'Payment failed',
-                            ]);
-                            $this->syncGatewayOrderAfterManualUpdate($insert_id, 2, (string)$txnid);
-                            if ($call_back_url) {
-                                $txnidEnc = urlencode($txnid);
-                                $url = "$call_back_url?payid=$insert_id&status=failure&operator_ref=$txnidEnc&client_id=$client_id&number=$number&provider_id=$provider_id&wallet_type=2";
-                                $response = Self::send_to_curl($url);
-                                Traceurl::insertGetId([
-                                    'user_id' => $user_id,
-                                    'url' => $url,
-                                    'number' => $number,
-                                    'response_message' => $response,
-                                    'created_at' => $ctime
-                                ]);
-                            }
-                            Self::solve_dispte($insert_id, $txnid);
-                            return Response()->json(['status' => 'success', 'message' => 'Transaction marked as failed']);
+                            return $this->markAddMoneyPayinFailedManual($reports, $txnid, $call_back_url, $ctime);
                         }
 
                         Report::where('id', $insert_id)->update(['status_id' => 5, 'txnid' => $txnid]);
@@ -380,76 +504,7 @@ namespace App\library {
                     } elseif ($status_id == 1) {
                         // Add-money payin: credit AEPS wallet like gateway callback (status Credit / 6)
                         if ($isAddMoneyPayin) {
-                            $userdetails = User::find($user_id);
-                            $scheme_id = $userdetails->scheme_id ?? 0;
-                            $commissionLibrary = new GetcommissionLibrary();
-                            $commission = $commissionLibrary->get_commission($scheme_id, $provider_id, $amount);
-                            $retailer = $commission['retailer'] ?? 0;
-                            $distributor = $commission['distributor'] ?? 0;
-                            $sdistributor = $commission['sdistributor'] ?? 0;
-                            $sales_team = $commission['sales_team'] ?? 0;
-                            $referral = $commission['referral'] ?? 0;
-                            $creditAmount = (float)$amount - (float)$retailer;
-
-                            $opening_balance = Balance::where('user_id', $user_id)->value('aeps_balance') ?? 0;
-                            Balance::where('user_id', $user_id)->increment('aeps_balance', $creditAmount);
-                            $newBalance = Balance::where('user_id', $user_id)->value('aeps_balance');
-
-                            $description = (string)($reports->description ?: 'Add Money');
-                            if ($mode !== '') {
-                                $description .= ' (Manual ' . $mode . ')';
-                            }
-
-                            Report::where('id', $insert_id)->update([
-                                'status_id' => 6,
-                                'txnid' => $txnid,
-                                'profit' => '-' . $retailer,
-                                'amount' => $amount,
-                                'description' => $description,
-                                'opening_balance' => $opening_balance,
-                                'total_balance' => $newBalance,
-                            ]);
-                            $this->syncGatewayOrderAfterManualUpdate($insert_id, 1, (string)$txnid);
-
-                            if ($call_back_url) {
-                                $txnidEnc = urlencode((string)$txnid);
-                                $url = "$call_back_url?status=credit&client_id=" . urlencode((string)$client_id)
-                                    . "&amount=" . urlencode((string)$amount)
-                                    . "&utr=$txnidEnc&txnid=$insert_id";
-                                $response = Self::send_to_curl($url);
-                                Traceurl::insertGetId([
-                                    'user_id' => $user_id,
-                                    'url' => $url,
-                                    'number' => $number,
-                                    'response_message' => $response,
-                                    'created_at' => $ctime
-                                ]);
-                            }
-
-                            try {
-                                $library = new Commission_increment();
-                                $library->parent_recharge_commission(
-                                    $user_id,
-                                    $number,
-                                    $insert_id,
-                                    $provider_id,
-                                    $amount,
-                                    $api_id,
-                                    $retailer,
-                                    $distributor,
-                                    $sdistributor,
-                                    $sales_team,
-                                    $referral
-                                );
-                            } catch (\Exception $e) {
-                                // Keep credit even if commission posting fails
-                            }
-
-                            Self::solve_dispte($insert_id, $txnid);
-                            return Response()->json([
-                                'status' => 'success',
-                                'message' => 'Transaction credited successfully. Payin balance updated.',
-                            ]);
+                            return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
                         }
 
                         Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $txnid]);
@@ -471,6 +526,10 @@ namespace App\library {
                         return Response()->json(['status' => 'success', 'message' => 'Transaction status successfully updpated']);
                     }
                 } elseif ($oldstatus_id == 1 && $status_id == 1) {
+                    if ($isAddMoneyPayin) {
+                        return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
+                    }
+
                     Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $txnid]);
                     if ($call_back_url) {
                         $txnid = urlencode($txnid);
