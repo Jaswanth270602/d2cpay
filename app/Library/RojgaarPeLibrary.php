@@ -4,6 +4,7 @@ namespace App\library {
 
     use App\Models\Api;
     use App\Models\Apiresponse;
+    use App\Models\Report;
     use App\Library\RefundLibrary;
     use Helpers;
     use Illuminate\Support\Facades\Cache;
@@ -103,23 +104,77 @@ namespace App\library {
         public static function parseIncomingPayoutCallback(\Illuminate\Http\Request $request): array
         {
             $payload = self::parseIncomingCallback($request);
-            $merchantRef = (string)(
+
+            $txnId = (string)($payload['txn_id'] ?? $payload['TxnID'] ?? '');
+            $providerMerchantRef = (string)(
                 $payload['merchant_refid']
                 ?? $payload['merchantOrderNo']
                 ?? $payload['reference_id']
                 ?? ''
             );
-            $status = self::normalizePayoutStatus((string)($payload['status'] ?? ''));
 
-            $payload['merchant_refid'] = $merchantRef;
-            $payload['merchantOrderNo'] = $merchantRef;
+            // We send merchant_refid as RPO{ymd}{reportId}. Provider may echo that as txn_id
+            // and put their own id in merchant_refid (e.g. PAYOUT...). Prefer the RPO ref for matching.
+            $ourRef = '';
+            foreach ([$txnId, $providerMerchantRef, (string)($payload['provider_txn_id'] ?? '')] as $candidate) {
+                if ($candidate !== '' && preg_match('/^RPO\d{6}\d{11}$/', $candidate)) {
+                    $ourRef = $candidate;
+                    break;
+                }
+            }
+            if ($ourRef === '') {
+                $ourRef = $txnId !== '' ? $txnId : $providerMerchantRef;
+            }
+
+            $status = self::normalizePayoutStatus((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+
+            $payload['merchant_refid'] = $ourRef;
+            $payload['merchantOrderNo'] = $ourRef;
+            $payload['provider_merchant_refid'] = $providerMerchantRef;
+            $payload['txn_id'] = $txnId !== '' ? $txnId : $ourRef;
             $payload['status'] = $status;
             $payload['orderStatus'] = $status;
             $payload['utr'] = (string)($payload['utr'] ?? '');
-            $payload['provider_txn_id'] = (string)($payload['provider_txn_id'] ?? $payload['txn_id'] ?? '');
+            $payload['provider_txn_id'] = (string)($payload['provider_txn_id'] ?? $txnId);
             $payload['amount'] = is_numeric($payload['amount'] ?? null) ? (float)$payload['amount'] : 0;
 
             return $payload;
+        }
+
+        /**
+         * Resolve payout report from callback payload using payid / RPO report id fallbacks.
+         */
+        public static function resolvePayoutReportFromCallback(array $payload)
+        {
+            $candidates = array_values(array_unique(array_filter([
+                (string)($payload['merchantOrderNo'] ?? ''),
+                (string)($payload['merchant_refid'] ?? ''),
+                (string)($payload['txn_id'] ?? ''),
+                (string)($payload['provider_txn_id'] ?? ''),
+                (string)($payload['provider_merchant_refid'] ?? ''),
+                (string)($payload['reference_id'] ?? ''),
+            ], static function ($value) {
+                return $value !== '';
+            })));
+
+            foreach ($candidates as $ref) {
+                $report = Report::where('payid', $ref)->where('api_id', 17)->orderBy('id', 'DESC')->first();
+                if (!$report) {
+                    $report = Report::where('payid', $ref)->orderBy('id', 'DESC')->first();
+                }
+                if ($report) {
+                    return $report;
+                }
+
+                if (preg_match('/^RPO\d{6}(\d{11})$/', $ref, $matches)) {
+                    $report = Report::find((int)$matches[1]);
+                    if ($report) {
+                        return $report;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public static function buildCallbackAudit(\Illuminate\Http\Request $request, array $payload): array

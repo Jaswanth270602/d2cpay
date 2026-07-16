@@ -537,7 +537,7 @@ class RefundController extends Controller
         $statusRaw = strtoupper((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
         $logType = RojgaarPeLibrary::isTerminalPayinStatus($statusRaw) ? 'call_back' : 'status_check';
 
-        Apiresponse::insertGetId([
+        $apiResponseId = Apiresponse::insertGetId([
             'message' => json_encode($audit),
             'api_type' => 17,
             'response_type' => $logType,
@@ -556,34 +556,48 @@ class RefundController extends Controller
 
         if (in_array($statusRaw, ['SUCCESS'], true)) {
             $statusId = 1;
-        } elseif (in_array($statusRaw, ['FAILED', 'CANCELLED'], true)) {
+        } elseif (in_array($statusRaw, ['FAILED', 'FAILURE', 'CANCELLED'], true)) {
             $statusId = 2;
         } else {
             $statusId = 3;
         }
 
-        $merchantOrderNo = (string)($payload['merchantOrderNo'] ?? $payload['merchant_refid'] ?? '');
         $utr = (string)($payload['utr'] ?? '');
         $amount = (float)($payload['amount'] ?? 0);
 
-        $report = null;
-        if ($merchantOrderNo !== '') {
-            $report = Report::where('payid', $merchantOrderNo)->orderBy('id', 'DESC')->first();
-        }
-        if (!$report && $merchantOrderNo !== '' && preg_match('/^RPO\d{6}(\d{11})$/', $merchantOrderNo, $matches)) {
-            $report = Report::find((int)$matches[1]);
-        }
+        $report = RojgaarPeLibrary::resolvePayoutReportFromCallback($payload);
 
         if (!$report) {
+            Log::warning('RojgaarPe payout callback report not found', [
+                'merchantOrderNo' => $payload['merchantOrderNo'] ?? '',
+                'merchant_refid' => $payload['merchant_refid'] ?? '',
+                'provider_merchant_refid' => $payload['provider_merchant_refid'] ?? '',
+                'txn_id' => $payload['txn_id'] ?? '',
+            ]);
             return response()->json(['status' => false, 'message' => 'Report not found'], 404);
+        }
+
+        Apiresponse::where('id', $apiResponseId)->update(['report_id' => $report->id]);
+
+        // Keep payid aligned to our RPO merchant ref when provider echoes it as txn_id.
+        $ourPayid = (string)($payload['merchantOrderNo'] ?? $payload['merchant_refid'] ?? '');
+        if ($ourPayid !== '' && preg_match('/^RPO\d{6}\d{11}$/', $ourPayid) && (string)$report->payid !== $ourPayid) {
+            Report::where('id', $report->id)->update(['payid' => $ourPayid]);
+            $report->refresh();
         }
 
         $mode = 'Call-back';
         $refundLibrary = new RefundLibrary();
+        $txnUpdateValue = $utr !== '' ? $utr : (string)($payload['message'] ?? $payload['provider_txn_id'] ?? '');
         if ($report->wallet_type == 1) {
-            $refundLibrary->update_transaction($statusId, $utr ?: ($payload['message'] ?? ''), $report->id, $mode);
+            $refundLibrary->update_transaction($statusId, $txnUpdateValue, $report->id, $mode);
         } elseif ($report->wallet_type == 2) {
-            $refundLibrary->update_transaction_aeps($statusId, $utr ?: ($payload['message'] ?? ''), $report->id, $mode);
+            $refundLibrary->update_transaction_aeps($statusId, $txnUpdateValue, $report->id, $mode);
+        } else {
+            Report::where('id', $report->id)->where('status_id', 3)->update([
+                'status_id' => $statusId,
+                'txnid' => $txnUpdateValue,
+            ]);
         }
 
         $member = Member::where('user_id', $report->user_id)->first();
@@ -624,6 +638,7 @@ class RefundController extends Controller
             'received' => true,
             'status' => true,
             'message' => 'Callback processed successfully',
+            'report_id' => $report->id,
         ]);
     }
     
