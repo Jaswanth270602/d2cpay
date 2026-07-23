@@ -399,7 +399,7 @@ class DirectTransferController extends Controller
             'amount' => 'required|numeric|between:' . $providers->min_amount . ',' . $providers->max_amount . '',
             'channel_id' => 'required',
             'client_id' => 'required',
-            'bank_name' => 'nullable|string|max:150',
+            'bank_name' => 'required|string|max:150',
         );
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {

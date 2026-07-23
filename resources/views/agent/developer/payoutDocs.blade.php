@@ -97,8 +97,8 @@
                             <tr>
                                 <td>bank_name</td>
                                 <td>String</td>
-                                <td>optional</td>
-                                <td>Beneficiary bank name (e.g. STATE BANK OF INDIA). Recommended for Payin 10. If omitted, it is resolved from IFSC; payout fails if the bank name cannot be resolved.</td>
+                                <td>required</td>
+                                <td>Beneficiary bank name (e.g. STATE BANK OF INDIA). Required for Payin 10 payouts.</td>
                             </tr>
                             </tbody>
                         </table>
