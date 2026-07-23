@@ -78,6 +78,86 @@ namespace App\library {
             return 'PENDING';
         }
 
+        /**
+         * Short human-readable payout failure text for reports UI / refunds.
+         */
+        public static function formatPayoutFailureReason(array $payload): string
+        {
+            foreach (['message', 'remark', 'reason', 'error', 'status_raw'] as $key) {
+                $value = trim((string)($payload[$key] ?? ''));
+                if ($value === '' || str_starts_with($value, '{')) {
+                    continue;
+                }
+                $upper = strtoupper($value);
+                if (in_array($upper, ['FAILED', 'FAILURE', 'FAILD', 'FAIL'], true)) {
+                    return 'Payment failed';
+                }
+                return $value;
+            }
+
+            $status = self::normalizePayoutStatus((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+            return $status === 'FAILED' ? 'Payment failed' : 'Payout failed';
+        }
+
+        /**
+         * Extract a short display message from api response / callback audit JSON.
+         * Never return the full audit blob for UI columns.
+         */
+        public static function prettifyApiLogMessage($payload): string
+        {
+            $message = trim((string)$payload);
+            if ($message === '') {
+                return '';
+            }
+
+            $decoded = json_decode($message, true);
+            if (!is_array($decoded)) {
+                return str_starts_with($message, '{') ? 'Payment failed' : $message;
+            }
+
+            // Callback audit shape: { method, content_type, parsed, raw, ... }
+            if (isset($decoded['parsed']) && is_array($decoded['parsed'])) {
+                return self::formatPayoutFailureReason($decoded['parsed']);
+            }
+
+            if (!empty($decoded['raw']) && is_string($decoded['raw'])) {
+                $rawDecoded = json_decode($decoded['raw'], true);
+                if (is_array($rawDecoded)) {
+                    return self::formatPayoutFailureReason($rawDecoded);
+                }
+            }
+
+            foreach (['message', 'responseMessage', 'error', 'remark', 'reason'] as $key) {
+                if (!empty($decoded[$key]) && is_scalar($decoded[$key])) {
+                    $value = trim((string)$decoded[$key]);
+                    if ($value !== '' && !str_starts_with($value, '{')) {
+                        $upper = strtoupper($value);
+                        if (in_array($upper, ['FAILED', 'FAILURE', 'FAILD', 'FAIL'], true)) {
+                            return 'Payment failed';
+                        }
+                        return $value;
+                    }
+                }
+            }
+
+            if (!empty($decoded['status']) && is_scalar($decoded['status'])) {
+                $status = self::normalizePayoutStatus((string)$decoded['status']);
+                if ($status === 'FAILED') {
+                    return 'Payment failed';
+                }
+                if ($status === 'SUCCESS') {
+                    return 'Success';
+                }
+            }
+
+            // Audit / noisy payloads — never dump full JSON into failure reason
+            if (isset($decoded['method']) || isset($decoded['content_type']) || isset($decoded['parsed'])) {
+                return 'Payment failed';
+            }
+
+            return 'Payment failed';
+        }
+
         public static function parseIncomingCallback(\Illuminate\Http\Request $request): array
         {
             $payload = $request->all();

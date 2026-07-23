@@ -588,7 +588,13 @@ class RefundController extends Controller
 
         $mode = 'Call-back';
         $refundLibrary = new RefundLibrary();
-        $txnUpdateValue = $utr !== '' ? $utr : (string)($payload['message'] ?? $payload['provider_txn_id'] ?? '');
+        $txnUpdateValue = $utr !== ''
+            ? $utr
+            : RojgaarPeLibrary::formatPayoutFailureReason($payload);
+        if ($statusId === 2 && ($txnUpdateValue === '' || str_starts_with($txnUpdateValue, '{'))) {
+            $txnUpdateValue = 'Payment failed';
+        }
+
         if ($report->wallet_type == 1) {
             $refundLibrary->update_transaction($statusId, $txnUpdateValue, $report->id, $mode);
         } elseif ($report->wallet_type == 2) {
@@ -597,6 +603,12 @@ class RefundController extends Controller
             Report::where('id', $report->id)->where('status_id', 3)->update([
                 'status_id' => $statusId,
                 'txnid' => $txnUpdateValue,
+            ]);
+        }
+
+        if ($statusId === 2) {
+            Report::where('id', $report->id)->update([
+                'reason' => $txnUpdateValue !== '' ? $txnUpdateValue : 'Payment failed',
             ]);
         }
 

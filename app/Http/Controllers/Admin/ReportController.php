@@ -741,7 +741,7 @@ class ReportController extends Controller
 
         $txnid = trim((string)$report->txnid);
         if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
-            if ($txnid !== '' && stripos($txnid, 'UTR') === false) {
+            if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
                 return $txnid;
             }
         }
@@ -781,26 +781,7 @@ class ReportController extends Controller
 
     private function prettifyApiPayload($payload): string
     {
-        $message = trim((string)$payload);
-        if ($message === '') {
-            return '';
-        }
-
-        $decoded = json_decode($message, true);
-        if (!is_array($decoded)) {
-            return $message;
-        }
-
-        foreach (['message', 'responseMessage', 'error', 'errors', 'status'] as $key) {
-            if (!empty($decoded[$key])) {
-                if (is_array($decoded[$key])) {
-                    return json_encode($decoded[$key]);
-                }
-                return (string)$decoded[$key];
-            }
-        }
-
-        return json_encode($decoded);
+        return RojgaarPeLibrary::prettifyApiLogMessage($payload);
     }
 
     function recharge_update_for_refund(Request $request)
