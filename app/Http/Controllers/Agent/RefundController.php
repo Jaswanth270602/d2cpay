@@ -556,7 +556,7 @@ class RefundController extends Controller
 
         if (in_array($statusRaw, ['SUCCESS'], true)) {
             $statusId = 1;
-        } elseif (in_array($statusRaw, ['FAILED', 'FAILURE', 'CANCELLED'], true)) {
+        } elseif (in_array($statusRaw, ['FAILED', 'FAILURE', 'FAILD', 'FAIL', 'CANCELLED', 'CANCELED'], true)) {
             $statusId = 2;
         } else {
             $statusId = 3;

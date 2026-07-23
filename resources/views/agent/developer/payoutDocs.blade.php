@@ -11,7 +11,7 @@
             <div class="col-lg-8 col-xl-9">
 
                 <div class="alert alert-info" role="alert">
-                    <strong>RojgaarPe (Payin 10 gateway):</strong> When your account is routed to RojgaarPe for payouts, each transfer must be between <strong>₹500</strong> and <strong>₹30,000</strong>. Configure your payout callback URL in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a>.
+                    <strong>Payin 10 gateway:</strong> When your account is routed to Payin 10 for payouts, each transfer must be between <strong>₹500</strong> and <strong>₹30,000</strong>. Configure your payout callback URL in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a>.
                 </div>
 
 
@@ -80,19 +80,25 @@
                                 <td>amount</td>
                                 <td>Number</td>
                                 <td>required, numeric, between:min_amount,max_amount</td>
-                                <td>The transaction amount in INR. For RojgaarPe payouts: ₹500 – ₹30,000. Other providers may have different limits.</td>
+                                <td>The transaction amount in INR. For Payin 10 payouts: ₹500 – ₹30,000. Other providers may have different limits.</td>
                             </tr>
                             <tr>
                                 <td>channel_id</td>
                                 <td>String</td>
                                 <td>required</td>
-                                <td>The ID of the transaction channel. Use <strong>1</strong> for NEFT and <strong>2</strong> for IMPS.</td>
+                                <td>The ID of the transaction channel. Use <strong>1</strong> for NEFT and <strong>2</strong> for IMPS. Mapped to Payin 10 payout mode.</td>
                             </tr>
                             <tr>
                                 <td>client_id</td>
                                 <td>String</td>
                                 <td>required</td>
                                 <td>Your unique ID for the client. This ID is used to identify the client making the request.</td>
+                            </tr>
+                            <tr>
+                                <td>bank_name</td>
+                                <td>String</td>
+                                <td>optional</td>
+                                <td>Beneficiary bank name (e.g. STATE BANK OF INDIA). Recommended for Payin 10. If omitted, it is resolved from IFSC; payout fails if the bank name cannot be resolved.</td>
                             </tr>
                             </tbody>
                         </table>
@@ -181,7 +187,7 @@ $expected = hash_hmac('sha256', $signatureString, YOUR_API_TOKEN);
 <pre>Sample callback URL (GET) :
 https://your-domain.com/payout/callback?status=success&amp;client_id=PAYOUT_001&amp;amount=1000&amp;utr=520613452706&amp;txnid=12345&amp;signature=abc123...</pre>
                         <hr>
-                        <p class="mb-0"><small><strong>Note:</strong> This is your merchant callback. The RojgaarPe provider webhook (<code>{{ url('api/call-back/rojgaarpe-payout') }}</code>) is handled internally when your account uses the RojgaarPe payout route.</small></p>
+                        <p class="mb-0"><small><strong>Note:</strong> This is your merchant callback. The Payin 10 provider webhook (<code>{{ url('api/call-back/rojgaarpe-payout') }}</code>) is handled internally when your account uses the Payin 10 payout route.</small></p>
                     </div>
                 </div>
 

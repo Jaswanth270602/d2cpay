@@ -635,7 +635,7 @@ class PayoutController extends Controller
                             ]);
                             Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
                             $vender_id = 1;
-                            $response = Self::callApi($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude);
+                            $response = Self::callApi($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude, $bank_name);
                             $status_id = $response['status_id'];
                             $txnid = $response['txnid'];
                             $payid = $response['payid'];
@@ -680,7 +680,7 @@ class PayoutController extends Controller
     }
 
 
-    function callApi($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude)
+    function callApi($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude, $bank_name = null)
     {
         if ($api_id == 2) {
             return Self::callmnppayApi($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude);
@@ -716,7 +716,7 @@ class PayoutController extends Controller
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }elseif ($api_id == 17){
             $library = new RojgaarPeLibrary();
-            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
+            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, 2, $bank_name);
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];
     }

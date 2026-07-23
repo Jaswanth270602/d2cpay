@@ -228,6 +228,53 @@ namespace App\library {
                     Self::return_parent_commission($insert_id, $mode);
                     Self::solve_dispte($insert_id, $txnid);
                     return Response()->json(['status' => 'success', 'message' => 'Transaction Refund Successfully']);
+                } elseif ($oldstatus_id == 2 && $status_id == 2 && !$isAddMoneyPayin) {
+                    // Already Failed without wallet refund (e.g. misclassified as payin) — refund once
+                    $alreadyRefunded = Report::where('txnid', 'Refund Id ' . $insert_id)->where('status_id', 4)->exists();
+                    if ($alreadyRefunded) {
+                        return Response()->json(['status' => 'failure', 'message' => 'Refund already processed']);
+                    }
+
+                    Report::where('id', $insert_id)->update(['status_id' => 5, 'txnid' => $txnid]);
+                    Commissionreport::where('report_id', $insert_id)->update(['status_id' => 2]);
+                    $balanace = Balance::where('user_id', $user_id)->first();
+                    $opening_balance = $balanace->user_balance;
+                    $finalamount = $amount - $profit;
+                    Balance::where('user_id', $user_id)->increment('user_balance', $finalamount);
+                    $balanace = Balance::where('user_id', $user_id)->first();
+                    $user_balance = $balanace->user_balance;
+                    $provider_name = $reports->provider->provider_name;
+                    $description = "$provider_name  $number";
+                    Report::insertGetId([
+                        'number' => $number,
+                        'provider_id' => $provider_id,
+                        'amount' => $amount,
+                        'api_id' => $api_id,
+                        'status_id' => 4,
+                        'created_at' => $ctime,
+                        'user_id' => $user_id,
+                        'profit' => Str::replace('-', '', $profit),
+                        'txnid' => 'Refund Id ' . $insert_id,
+                        'mode' => $mode,
+                        'description' => $description,
+                        'opening_balance' => $opening_balance,
+                        'total_balance' => $user_balance,
+                        'wallet_type' => 1,
+                    ]);
+                    if ($call_back_url) {
+                        $txnidEnc = urlencode($txnid);
+                        $url = "$call_back_url?payid=$insert_id&status=failure&operator_ref=$txnidEnc&client_id=$client_id&number=$number&provider_id=$provider_id&wallet_type=1";
+                        $response = Self::send_to_curl($url);
+                        Traceurl::insertGetId([
+                            'user_id' => $user_id,
+                            'url' => $url,
+                            'number' => $number,
+                            'response_message' => $response,
+                            'created_at' => $ctime
+                        ]);
+                    }
+                    Self::solve_dispte($insert_id, $txnid);
+                    return Response()->json(['status' => 'success', 'message' => 'Transaction Refund Successfully']);
                 } elseif (in_array((int)$oldstatus_id, [1, 6], true) && (int)$status_id === 1 && $isAddMoneyPayin) {
                     // Repair Success/Credit rows that never updated Payin Bal
                     return $this->creditAddMoneyPayinManual($reports, $txnid, $mode, $call_back_url, $ctime);
@@ -282,9 +329,19 @@ namespace App\library {
         /**
          * Add-money / Payin reports do not pre-debit the wallet.
          * Manual success must credit aeps_balance (Payin sales cards include status 1/6).
+         * Never treat payouts (wallet_type 1 / provider 324) as add-money payin —
+         * those debit user_balance and must refund on failure.
          */
         private function isAddMoneyPayinReport(Report $report): bool
         {
+            // Payout / bank transfer — always use normal refund path
+            if ((int)$report->wallet_type === 1) {
+                return false;
+            }
+            if ((int)$report->provider_id === 324) {
+                return false;
+            }
+
             if (Gatewayorder::where('report_id', $report->id)->exists()) {
                 return true;
             }

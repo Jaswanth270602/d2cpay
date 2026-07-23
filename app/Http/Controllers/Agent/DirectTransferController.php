@@ -399,6 +399,7 @@ class DirectTransferController extends Controller
             'amount' => 'required|numeric|between:' . $providers->min_amount . ',' . $providers->max_amount . '',
             'channel_id' => 'required',
             'client_id' => 'required',
+            'bank_name' => 'nullable|string|max:150',
         );
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -418,6 +419,7 @@ class DirectTransferController extends Controller
         $amount = $request->amount;
         $channel_id = $request->channel_id;
         $client_id = $request->client_id;
+        $bank_name = $request->bank_name;
         $mode = "API";
         $user_id = Auth::id();
         $request_ip = request()->ip();
@@ -426,11 +428,11 @@ class DirectTransferController extends Controller
                 return Response()->json(['status' => 'failure', 'message' => "Unauthorized ip address", 'utr' => $request_ip, 'payid' => '']);
             }
         }
-        return Self::transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id);
+        return Self::transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id, $bank_name);
     }
 
 
-    function transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id)
+    function transferNowMiddle($mobile_number, $email, $beneficiary_name, $ifsc_code, $account_number, $amount, $channel_id, $client_id, $mode, $user_id, $bank_name = null)
     {
         $userdetails = User::find($user_id);
         $library = new BasicLibrary();
@@ -469,7 +471,14 @@ class DirectTransferController extends Controller
                 $now = new \DateTime();
                 $ctime = $now->format('Y-m-d H:i:s');
                 $description = $beneficiary_name . ' | ' . $account_number;
-                $row_data = array('mobile_number' => $mobile_number, 'email' => $email, 'account_number' => $account_number, 'ifsc_code' => $ifsc_code, 'beneficiary_name' => $beneficiary_name);
+                $row_data = array(
+                    'mobile_number' => $mobile_number,
+                    'email' => $email,
+                    'account_number' => $account_number,
+                    'ifsc_code' => $ifsc_code,
+                    'beneficiary_name' => $beneficiary_name,
+                    'bank_name' => $bank_name,
+                );
                 $insert_id = Report::insertGetId([
                     'number' => $account_number,
                     'provider_id' => $provider_id,
@@ -563,7 +572,7 @@ class DirectTransferController extends Controller
                     $payid = $response['payid'];
                 }elseif ($api_id == 17){
                     $library = new RojgaarPeLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id, $bank_name);
                     $status_id = $response['status_id'];
                     $utr = $response['txnid'];
                     $payid = $response['payid'];

@@ -59,7 +59,7 @@ namespace App\library {
             if (in_array($status, ['COMPLETED', 'SUCCESS', 'SUCCESSFUL', 'PAID'], true)) {
                 return 'SUCCESS';
             }
-            if (in_array($status, ['FAILED', 'FAILURE', 'CANCELLED'], true)) {
+            if (in_array($status, ['FAILED', 'FAILURE', 'FAILD', 'FAIL', 'CANCELLED', 'CANCELED'], true)) {
                 return 'FAILED';
             }
             return 'PENDING';
@@ -71,7 +71,8 @@ namespace App\library {
             if ($status === 'SUCCESS') {
                 return 'SUCCESS';
             }
-            if (in_array($status, ['FAILED', 'FAILURE', 'CANCELLED'], true)) {
+            // Provider sometimes sends typo "FAILD"
+            if (in_array($status, ['FAILED', 'FAILURE', 'FAILD', 'FAIL', 'CANCELLED', 'CANCELED'], true)) {
                 return 'FAILED';
             }
             return 'PENDING';
@@ -126,7 +127,13 @@ namespace App\library {
                 $ourRef = $txnId !== '' ? $txnId : $providerMerchantRef;
             }
 
-            $status = self::normalizePayoutStatus((string)($payload['status'] ?? $payload['orderStatus'] ?? ''));
+            // Prefer status_raw — payin normalizer may have already mapped unknown provider typos to PENDING
+            $status = self::normalizePayoutStatus((string)(
+                $payload['status_raw']
+                ?? $payload['status']
+                ?? $payload['orderStatus']
+                ?? ''
+            ));
 
             $payload['merchant_refid'] = $ourRef;
             $payload['merchantOrderNo'] = $ourRef;
@@ -630,7 +637,7 @@ namespace App\library {
             return null;
         }
 
-        public function transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id)
+        public function transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id = null, $bank_name = null)
         {
             if ($this->payoutSecretKey === '' || $this->loginId === '') {
                 return ['status_id' => 3, 'txnid' => 'RojgaarPe payout credentials missing', 'payid' => ''];
@@ -645,13 +652,22 @@ namespace App\library {
                 ];
             }
 
+            $resolvedBankName = $this->resolveBankName($ifsc_code, $bank_name);
+            if ($resolvedBankName === '') {
+                return [
+                    'status_id' => 2,
+                    'txnid' => 'Invalid or missing bank name. Provide bank_name or a valid IFSC.',
+                    'payid' => '',
+                ];
+            }
+
             $token = $this->getPayoutToken();
             if ($token === '') {
                 return ['status_id' => 3, 'txnid' => 'Unable to generate payout token', 'payid' => ''];
             }
 
             $merchantRef = $this->buildPayoutMerchantRef($insert_id);
-            $bankName = $this->getBanknameByIfsc($ifsc_code);
+            $payoutMode = $this->resolvePayoutMode($channel_id, $insert_id);
             $callbackUrl = self::publicUrl('api/call-back/rojgaarpe-payout');
 
             $payload = [
@@ -662,8 +678,8 @@ namespace App\library {
                 'account_holder_name' => (string)$beneficiary_name,
                 'account_number' => (string)$account_number,
                 'ifsc' => (string)$ifsc_code,
-                'bank_name' => (string)$bankName,
-                'mode' => 'IMPS',
+                'bank_name' => $resolvedBankName,
+                'mode' => $payoutMode,
                 'callback_url' => $callbackUrl,
             ];
 
@@ -795,20 +811,59 @@ namespace App\library {
             return (string)($data['provider_txn_id'] ?? '');
         }
 
+        /**
+         * Map D2C channel_id to RojgaarPe mode: 1 = NEFT, 2 = IMPS (default).
+         */
+        private function resolvePayoutMode($channel_id, $insert_id): string
+        {
+            if ($channel_id === null || $channel_id === '') {
+                $report = Report::find($insert_id);
+                $channel_id = $report->channel ?? 2;
+            }
+
+            return ((int)$channel_id === 1) ? 'NEFT' : 'IMPS';
+        }
+
+        private function resolveBankName($ifsc_code, $bank_name = null): string
+        {
+            $provided = trim((string)($bank_name ?? ''));
+            if ($provided !== '' && strtoupper($provided) !== 'BANK') {
+                return $provided;
+            }
+
+            return $this->getBanknameByIfsc($ifsc_code);
+        }
+
         private function getBanknameByIfsc($ifsc_code): string
         {
-            $url = 'https://ifsc.razorpay.com/' . rawurlencode((string)$ifsc_code);
+            $ifsc = strtoupper(trim((string)$ifsc_code));
+            if ($ifsc === '' || strlen($ifsc) !== 11) {
+                return '';
+            }
+
+            $url = 'https://ifsc.razorpay.com/' . rawurlencode($ifsc);
             $curl = curl_init();
             curl_setopt_array($curl, [
                 CURLOPT_URL => $url,
                 CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 5,
                 CURLOPT_TIMEOUT => 15,
             ]);
             $data = curl_exec($curl);
+            $httpCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
             curl_close($curl);
-            $res = json_decode((string)$data);
 
-            return (string)($res->BANK ?? 'BANK');
+            if ($data === false || $httpCode !== 200) {
+                return '';
+            }
+
+            $res = json_decode((string)$data);
+            $bank = trim((string)($res->BANK ?? ''));
+            if ($bank === '' || strtoupper($bank) === 'BANK') {
+                return '';
+            }
+
+            return $bank;
         }
 
         public static function publicBaseUrl(): string
