@@ -19,7 +19,7 @@
                         <p>Creates a Payin 10 UPI collection order via RojgaarPe. Send your API token as a <strong>Bearer</strong> token in the <code>Authorization</code> header. Request body may be sent as <code>application/json</code> or <code>application/x-www-form-urlencoded</code> (form fields).</p>
 
                         <div class="alert alert-info mg-b-0" role="alert">
-                            <strong>Amount limits:</strong> ₹300 – ₹20,000 per transaction (RojgaarPe gateway limits).
+                            <strong>Amount limits:</strong> ₹100 – ₹20,000 per transaction (RojgaarPe gateway limits).
                         </div>
 
                         <table class="table main-table-reference mt-3 mb-0">
@@ -38,7 +38,7 @@
                             <tr>
                                 <td><code>amount</code></td>
                                 <td>numeric</td>
-                                <td>Order amount in INR. Must be between ₹300 and ₹20,000.</td>
+                                <td>Order amount in INR. Must be between ₹100 and ₹20,000.</td>
                                 <td>Yes</td>
                             </tr>
                             <tr>
@@ -159,7 +159,7 @@
 <pre style="color:#dc3545;">Error Response :
 {
     "status": "failure",
-    "message": "The amount must be between 300 and 20000."
+    "message": "The amount must be between 100 and 20000."
 }
 or
 {

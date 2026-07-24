@@ -188,7 +188,7 @@
 
             <div class="form-group">
                 <input type="text" id="amount" class="form-control" placeholder=" " oninput="toggleBtn()">
-                <label class="form-label" for="amount">Enter Amount ({{ $min_amount ?? 300 }} to {{ $max_amount ?? 20000 }})</label>
+                <label class="form-label" for="amount">Enter Amount ({{ $min_amount ?? 100 }} to {{ $max_amount ?? 20000 }})</label>
                 <ul class="parsley-errors-list filled" style="margin:6px 0 0 2px;">
                     <li class="parsley-required" id="amount_errors" style="color:#cc1f1a;"></li>
                 </ul>
@@ -250,7 +250,7 @@
 </div>
 
 <script>
-    const MIN_AMOUNT = {{ $min_amount ?? 300 }};
+    const MIN_AMOUNT = {{ $min_amount ?? 100 }};
     const MAX_AMOUNT = {{ $max_amount ?? 20000 }};
 
     let qpcPollInterval = null;

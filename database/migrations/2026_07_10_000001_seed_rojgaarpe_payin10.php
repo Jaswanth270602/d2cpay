@@ -42,7 +42,7 @@ return new class extends Migration
             'provider_name' => 'Payin 10',
             'service_id' => 36,
             'api_id' => 17,
-            'min_amount' => 300,
+            'min_amount' => 100,
             'max_amount' => 20000,
             'status_id' => 1,
             'updated_at' => $now,

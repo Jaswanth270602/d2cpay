@@ -43,7 +43,7 @@ class RojgaarPeController extends Controller
         $this->base_url = rtrim($credentials->base_url ?? 'https://rojgaarpe.com', '/');
 
         $provider = Provider::find($this->provider_id);
-        $this->min_amount = isset($provider->min_amount) ? (int)$provider->min_amount : 300;
+        $this->min_amount = isset($provider->min_amount) ? (int)$provider->min_amount : 100;
         $this->max_amount = isset($provider->max_amount) ? (int)$provider->max_amount : 20000;
     }
 
