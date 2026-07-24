@@ -575,7 +575,7 @@ class PayoutController extends Controller
     function transfer_now_middle($mobile_number, $account_number, $holder_name, $bank_name, $ifsc_code, $recipient_id, $amount, $password, $user_id, $mode, $request_ip, $latitude, $longitude)
     {
         $provider_id = 324;
-        if ($amount >= 9 && $amount <= 200000) {
+        if ($amount >= 1 && $amount <= 10000000) {
             $userdetails = User::find($user_id);
             $library = new BasicLibrary();
             $activeService = $library->getActiveService($provider_id, $user_id);
@@ -675,7 +675,7 @@ class PayoutController extends Controller
                 return Response()->json(['status' => 'failure', 'message' => $message]);
             }
         } else {
-            return Response()->json(['status' => 'failure', 'message' => 'Amount Should be Minimum Rs 10 Or Maximum 200000']);
+            return Response()->json(['status' => 'failure', 'message' => 'Amount Should be Minimum Rs 1 Or Maximum 10000000']);
         }
     }
 

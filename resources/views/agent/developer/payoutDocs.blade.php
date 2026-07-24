@@ -11,7 +11,7 @@
             <div class="col-lg-8 col-xl-9">
 
                 <div class="alert alert-info" role="alert">
-                    <strong>Payin 10 gateway:</strong> When your account is routed to Payin 10 for payouts, each transfer must be between <strong>₹500</strong> and <strong>₹30,000</strong>. Configure your payout callback URL in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a>.
+                    <strong>Payin 10 gateway:</strong> When your account is routed to Payin 10 for payouts, each transfer must be between <strong>₹1</strong> and <strong>₹1,00,00,000</strong>. Configure your payout callback URL in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a>.
                 </div>
 
 
@@ -80,7 +80,7 @@
                                 <td>amount</td>
                                 <td>Number</td>
                                 <td>required, numeric, between:min_amount,max_amount</td>
-                                <td>The transaction amount in INR. For Payin 10 payouts: ₹500 – ₹30,000. Other providers may have different limits.</td>
+                                <td>The transaction amount in INR. For Payin 10 payouts: ₹1 – ₹1,00,00,000. Other providers may have different limits.</td>
                             </tr>
                             <tr>
                                 <td>channel_id</td>

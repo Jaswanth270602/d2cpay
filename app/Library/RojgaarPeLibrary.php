@@ -13,8 +13,8 @@ namespace App\library {
     {
         public const PAYIN_MIN = 300;
         public const PAYIN_MAX = 20000;
-        public const PAYOUT_MIN = 500;
-        public const PAYOUT_MAX = 30000;
+        public const PAYOUT_MIN = 1;
+        public const PAYOUT_MAX = 10000000;
 
         private $api_id;
         private $base_url;
