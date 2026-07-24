@@ -264,7 +264,7 @@ class DownloadController extends Controller
         $delimiter = ",";
         [, $filepath, $path] = $this->prepareDownloadTarget('all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
         $fp = fopen($filepath, 'w+');
-        $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Failure Reason', 'Client ID'];
+        $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Platform Fee', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Failure Reason', 'Client ID'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);

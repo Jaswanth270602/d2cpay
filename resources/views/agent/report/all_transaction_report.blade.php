@@ -85,7 +85,7 @@
                                     <th class="wd-15p border-bottom-0">UTR</th>
                                     <th class="wd-15p border-bottom-0">Opening Balance</th>
                                     <th class="wd-15p border-bottom-0">Amount</th>
-                                    <th class="wd-15p border-bottom-0">Profit</th>
+                                    <th class="wd-15p border-bottom-0">Platform Fee</th>
                                     <th class="wd-15p border-bottom-0">Closing Balance</th>
                                     <th class="wd-15p border-bottom-0">Client Id</th>
                                     <th class="wd-15p border-bottom-0">Status</th>

@@ -141,7 +141,7 @@
                                             <th class="wd-15p border-bottom-0">Number</th>
                                             <th class="wd-15p border-bottom-0">Opening Balance</th>
                                             <th class="wd-15p border-bottom-0">Amount</th>
-                                            <th class="wd-15p border-bottom-0">Profit</th>
+                                            <th class="wd-15p border-bottom-0">Platform Fee</th>
                                             <th class="wd-15p border-bottom-0">Closing Balance</th>
                                             <th class="wd-15p border-bottom-0">Mode</th>
                                             <th class="wd-15p border-bottom-0">State</th>
