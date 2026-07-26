@@ -313,6 +313,7 @@ class MemberController extends Controller
             $pan_number = $request->pan_number;
             $gst_number = $request->gst_number;
             $userdetails = User::where('id', $user_id)->first();
+            $previousLockAmount = (float)($userdetails->lock_amount ?? 0);
             if ($request->role_id > Auth::user()->role_id) {
                 $role_id = $request->role_id;
             } else {
@@ -364,6 +365,19 @@ class MemberController extends Controller
                 'active_services' => $active_services,
             ]);
             DB::commit();
+
+            $newLockAmount = (float)(empty($lock_amount) ? 0 : $lock_amount);
+            if ($newLockAmount < $previousLockAmount) {
+                try {
+                    (new \App\Library\LockHoldPayoutLibrary())->processEligibleForUser((int)$user_id);
+                } catch (\Exception $lockHoldEx) {
+                    \Log::error('Lock hold payout processing failed', [
+                        'user_id' => $user_id,
+                        'error' => $lockHoldEx->getMessage(),
+                    ]);
+                }
+            }
+
             return Response()->json(['status' => 'success', 'message' => 'user successfully updated']);
         } catch (\Exception $ex) {
             DB::rollback();

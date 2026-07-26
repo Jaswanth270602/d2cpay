@@ -110,9 +110,12 @@
                         <pre style="color: #0ba360;">Success Response : {"status":"success","message":"Your payout was successful! Thank you for using our service.","utr":"value_of_utr","payid":"12345"}</pre>
                         <pre style="color: #f53c5b;">Failure Response : {"status":"failure","message":"error_message","utr":"","payid":"12345"}</pre>
                         <pre style="color: #ffc107;">Pending Response : {"status":"pending","message":"Your payout transaction is in process. Please wait for confirmation.","utr":"","payid":"12345"}</pre>
+                        <pre style="color: #ffc107;">Lock Hold Pending : {"status":"pending","message":"Waiting for Bank Confirmation","utr":"","payid":"12345","flag":"waiting_for_bank_confirmation"}</pre>
                         <hr>
                         <div class="alert alert-danger mg-b-0" role="alert">
                             If the status is <strong>pending</strong>, the final status and UTR will be sent to your payout callback URL. Configure it in <a href="{{ url('agent/developer/settings') }}">Developer &rarr; Settings</a> (Payout Callback URL).
+                            <br><br>
+                            If <code>flag</code> is <code>waiting_for_bank_confirmation</code>, the payout is held because of Lock Amount (wallet is not deducted yet and the bank gateway is not called). It will process after admin reduces/removes the Lock Amount, if wallet balance is still sufficient.
                         </div>
                     </div>
                 </div>

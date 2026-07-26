@@ -82,8 +82,20 @@ class DashboardController extends Controller
         $user_id = Auth::id();
         $library = new MemberLibrary();
         $my_down_member = $library->my_down_member($role_id, $company_id, $user_id);
-        $normal_sale = Report::whereIn('user_id', $my_down_member)->whereIn('status_id', [1, 3, 8])->whereDate('created_at', '=', date('Y-m-d'))->sum('amount');
-        $aeps_sale = Report::whereIn('user_id', $my_down_member)->whereIn('status_id', [6])->whereIn('provider_id', [316, 317, 318, 319, 320])->whereDate('created_at', '=', date('Y-m-d'))->sum('amount');
+        // Include payout success/pending and payin credits (status 6). Exclude AEPS providers from Today Sale
+        // so they remain only under Today Aeps Sale.
+        $aepsProviderIds = [316, 317, 318, 319, 320];
+        $normal_sale = Report::whereIn('user_id', $my_down_member)
+            ->whereDate('created_at', '=', date('Y-m-d'))
+            ->where(function ($query) use ($aepsProviderIds) {
+                $query->whereIn('status_id', [1, 3, 8])
+                    ->orWhere(function ($creditQuery) use ($aepsProviderIds) {
+                        $creditQuery->where('status_id', 6)
+                            ->whereNotIn('provider_id', $aepsProviderIds);
+                    });
+            })
+            ->sum('amount');
+        $aeps_sale = Report::whereIn('user_id', $my_down_member)->whereIn('status_id', [6])->whereIn('provider_id', $aepsProviderIds)->whereDate('created_at', '=', date('Y-m-d'))->sum('amount');
         if (Auth::User()->role_id == 8 || Auth::User()->role_id == 9 || Auth::User()->role_id == 10) {
             $today_profit = Report::where('user_id', Auth::id())->whereIn('status_id', [1])->whereDate('created_at', '=', date('Y-m-d'))->sum('profit');
         } elseif (Auth::User()->role_id == 1) {

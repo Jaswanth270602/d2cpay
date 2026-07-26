@@ -39,6 +39,7 @@ use App\Library\SafepPayLibrary;
 use App\Library\ZigPayLibrary;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
+use App\Library\LockHoldPayoutLibrary;
 use App\Imports\BulkUpload;
 use App\Exports\BulkPayoutTemplateExport;
 
@@ -439,10 +440,11 @@ class DirectTransferController extends Controller
         $activeService = $library->getActiveService($this->provider_id, $user_id);
         $serviceStatus = $activeService['status_id'];
         if ($userdetails->company->server_down == 1 && $serviceStatus == 1) {
-            $opening_balance = $userdetails->balance->user_balance;
+            $opening_balance = (float)$userdetails->balance->user_balance;
+            $lienAmount = (float)($userdetails->balance->lien_amount ?? 0);
+            $lockAmount = (float)($userdetails->lock_amount ?? 0);
             $scheme_id = $userdetails->scheme_id;
             $provider_id = $this->provider_id;
-            $providers = Provider::find($provider_id);
             $library = new GetcommissionLibrary();
             $commission = $library->get_commission($scheme_id, $provider_id, $amount);
             $retailer = ($commission['retailer'] == 0) ? 10 : $commission['retailer'];
@@ -450,160 +452,390 @@ class DirectTransferController extends Controller
             $sdistributor = $commission['sdistributor'];
             $sales_team = $commission['sales_team'];
             $referral = $commission['referral'];
-            $sumamount = $amount + $retailer + $userdetails->lock_amount + $userdetails->balance->lien_amount;
-            if ($opening_balance >= $sumamount && $sumamount >= 10) {
-                $decrementAmount = $amount + $retailer;
-                Balance::where('user_id', $user_id)->decrement('user_balance', $decrementAmount);
-                $balances = Balance::where('user_id', $user_id)->first();
-                $user_balance = $balances->user_balance;
-                $api_id = $userdetails->company->payout_route;
-                $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
-                    ->where('maximum_amount', '>=', $amount)
-                    ->where(function ($query) use ($user_id) {
-                        $query->where('user_id', $user_id)
-                            ->orWhere('user_id', 0) // Handle case where user_id is 0
-                            ->orWhereNull('user_id'); // Handle case where user_id might not be set
-                    })->first();
-                if ($banktransferswitching) {
-                    $api_id = $banktransferswitching->api_id ?? $api_id;
-                }
+            $debitAmount = (float)$amount + (float)$retailer;
 
-                $now = new \DateTime();
-                $ctime = $now->format('Y-m-d H:i:s');
-                $description = $beneficiary_name . ' | ' . $account_number;
-                $row_data = array(
-                    'mobile_number' => $mobile_number,
-                    'email' => $email,
-                    'account_number' => $account_number,
-                    'ifsc_code' => $ifsc_code,
-                    'beneficiary_name' => $beneficiary_name,
-                    'bank_name' => $bank_name,
-                );
-                $insert_id = Report::insertGetId([
-                    'number' => $account_number,
-                    'provider_id' => $provider_id,
-                    'amount' => $amount,
-                    'api_id' => $api_id,
-                    'status_id' => 3,
-                    'created_at' => $ctime,
-                    'user_id' => $user_id,
-                    'profit' => '-' . $retailer,
-                    'mode' => $mode,
-                    'ip_address' => request()->ip(),
-                    'description' => $description,
-                    'opening_balance' => $opening_balance,
-                    'total_balance' => $user_balance,
-                    'wallet_type' => 1,
-                    'channel' => $channel_id,
-                    'client_id' => $client_id,
-                    'row_data' => json_encode($row_data),
+            if ($debitAmount < 10 || !LockHoldPayoutLibrary::hasSufficientWallet($opening_balance, $debitAmount, $lienAmount)) {
+                return Response()->json([
+                    'status' => 'failure',
+                    'message' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+                    'utr' => '',
+                    'payid' => '',
                 ]);
-                if ($mode != 'API') {
-                    Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
-                }
-
-                $vender_id = 1;
-                $latitude = '';
-                $longitude = '';
-                if ($api_id == 2) {
-                    $response = Self::callmnppayApi($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                } elseif ($api_id == 4) {
-                    $library = new AccosisLibrary();
-                    $response = $library->impsTransfer($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                } elseif ($api_id == 5) {
-                    $library = new PaywizeLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                } elseif ($api_id == 6) {
-                    $library = new SprezapayLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                } elseif ($api_id == 7) {
-                    $library = new PockethubLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                } elseif ($api_id == 11) {
-                    $library = new RazorpaypayoutLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 10){
-                    $library = new PunjikendraLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 12){
-                    $library = new VtransactLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 14){
-                    $library = new SafepPayLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 15){
-                    $library = new ZigPayLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 16){
-                    $library = new QuickPayCashLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }elseif ($api_id == 17){
-                    $library = new RojgaarPeLibrary();
-                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id, $bank_name);
-                    $status_id = $response['status_id'];
-                    $utr = $response['txnid'];
-                    $payid = $response['payid'];
-                }else {
-                    $status_id = 2;
-                    $utr = '';
-                    $payid = '';
-                }
-                if ($status_id == 1) {
-                    Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $utr, 'payid' => $payid]);
-                    $library = new Commission_increment();
-                    $library->parent_recharge_commission($user_id, $account_number, $insert_id, $provider_id, $amount, $api_id, $retailer, $distributor, $sdistributor, $sales_team, $referral);
-                    return Response()->json(['status' => 'success', 'message' => 'Your payout was successful! Thank you for using our service.', 'utr' => $utr, 'payid' => $insert_id]);
-                } elseif ($status_id == 2) {
-                    Balance::where('user_id', $user_id)->increment('user_balance', $decrementAmount);
-                    $balance = Balance::where('user_id', $user_id)->first();
-                    $user_balance = $balance->user_balance;
-                    Report::where('id', $insert_id)->update(['status_id' => 2, 'reason' => $utr, 'total_balance' => $user_balance, 'payid' => $payid]);
-                    $message = ($utr == 'Insufficient fund') ? 'Transaction Failed' : 'Transaction Failed. Please try again.`';
-                    return Response()->json(['status' => 'failure', 'message' => $utr, 'utr' => '', 'payid' => $insert_id]);
-                } else {
-                    Report::where('id', $insert_id)->update(['payid' => $payid]);
-                    return Response()->json(['status' => 'pending', 'message' => 'Your payout transaction is in process. Please wait for confirmation.', 'utr' => '', 'payid' => $insert_id]);
-                }
-            } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient funds', 'utr' => '', 'payid' => '']);
             }
-        } else {
-            $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
-            return Response()->json(['status' => 'failure', 'message' => $message, 'utr' => '', 'payid' => '']);
+
+            if (LockHoldPayoutLibrary::isBlockedByLock($opening_balance, $debitAmount, $lienAmount, $lockAmount)) {
+                return $this->createLockHoldPendingPayout(
+                    $mobile_number,
+                    $email,
+                    $beneficiary_name,
+                    $ifsc_code,
+                    $account_number,
+                    $amount,
+                    $channel_id,
+                    $client_id,
+                    $mode,
+                    $user_id,
+                    $bank_name,
+                    $provider_id,
+                    $retailer,
+                    $opening_balance
+                );
+            }
+
+            return $this->executePayoutTransfer(
+                $mobile_number,
+                $email,
+                $beneficiary_name,
+                $ifsc_code,
+                $account_number,
+                $amount,
+                $channel_id,
+                $client_id,
+                $mode,
+                $user_id,
+                $bank_name,
+                $provider_id,
+                $retailer,
+                $distributor,
+                $sdistributor,
+                $sales_team,
+                $referral,
+                $opening_balance,
+                true,
+                null
+            );
         }
+
+        $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
+        return Response()->json(['status' => 'failure', 'message' => $message, 'utr' => '', 'payid' => '']);
+    }
+
+    private function createLockHoldPendingPayout(
+        $mobile_number,
+        $email,
+        $beneficiary_name,
+        $ifsc_code,
+        $account_number,
+        $amount,
+        $channel_id,
+        $client_id,
+        $mode,
+        $user_id,
+        $bank_name,
+        $provider_id,
+        $retailer,
+        $opening_balance
+    ) {
+        $userdetails = User::find($user_id);
+        $api_id = $this->resolvePayoutApiId($userdetails, $amount);
+        $now = new \DateTime();
+        $ctime = $now->format('Y-m-d H:i:s');
+        $description = $beneficiary_name . ' | ' . $account_number;
+        $row_data = [
+            'mobile_number' => $mobile_number,
+            'email' => $email,
+            'account_number' => $account_number,
+            'ifsc_code' => $ifsc_code,
+            'beneficiary_name' => $beneficiary_name,
+            'bank_name' => $bank_name,
+            'lock_hold_flag' => LockHoldPayoutLibrary::FLAG,
+        ];
+
+        $insert_id = Report::insertGetId([
+            'number' => $account_number,
+            'provider_id' => $provider_id,
+            'amount' => $amount,
+            'api_id' => $api_id,
+            'status_id' => 3,
+            'created_at' => $ctime,
+            'user_id' => $user_id,
+            'profit' => '-' . $retailer,
+            'mode' => $mode,
+            'ip_address' => request()->ip(),
+            'description' => $description,
+            'opening_balance' => $opening_balance,
+            'total_balance' => $opening_balance,
+            'wallet_type' => 1,
+            'channel' => $channel_id,
+            'client_id' => $client_id,
+            'reason' => LockHoldPayoutLibrary::REASON_WAITING,
+            'row_data' => json_encode($row_data),
+        ]);
+        if ($mode != 'API') {
+            Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
+        }
+
+        return Response()->json([
+            'status' => 'pending',
+            'message' => LockHoldPayoutLibrary::REASON_WAITING,
+            'utr' => '',
+            'payid' => $insert_id,
+            'flag' => LockHoldPayoutLibrary::FLAG,
+        ]);
+    }
+
+    /**
+     * Resume a lock-held payout after admin reduces/removes Lock Amount.
+     */
+    public function processLockHeldPayout(int $reportId): array
+    {
+        $report = Report::find($reportId);
+        if (!$report || (int)$report->status_id !== 3) {
+            return ['processed' => false];
+        }
+
+        $row = LockHoldPayoutLibrary::decodeRowData($report->row_data);
+        if (($row['lock_hold_flag'] ?? '') !== LockHoldPayoutLibrary::FLAG) {
+            return ['processed' => false];
+        }
+
+        $user_id = (int)$report->user_id;
+        $userdetails = User::with('balance', 'company')->find($user_id);
+        if (!$userdetails || !$userdetails->balance) {
+            return ['processed' => false];
+        }
+
+        $amount = (float)$report->amount;
+        $retailer = abs((float)$report->profit);
+        if ($retailer <= 0) {
+            $commissionLibrary = new GetcommissionLibrary();
+            $commission = $commissionLibrary->get_commission($userdetails->scheme_id, $this->provider_id, $amount);
+            $retailer = ($commission['retailer'] == 0) ? 10 : $commission['retailer'];
+        }
+        $debitAmount = $amount + (float)$retailer;
+        $opening_balance = (float)$userdetails->balance->user_balance;
+        $lienAmount = (float)($userdetails->balance->lien_amount ?? 0);
+        $lockAmount = (float)($userdetails->lock_amount ?? 0);
+
+        if (!LockHoldPayoutLibrary::hasSufficientWallet($opening_balance, $debitAmount, $lienAmount)) {
+            $row['lock_hold_flag'] = LockHoldPayoutLibrary::FLAG_INSUFFICIENT;
+            Report::where('id', $report->id)->update([
+                'reason' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+                'row_data' => json_encode($row),
+            ]);
+            return ['processed' => false, 'insufficient' => true];
+        }
+
+        if (LockHoldPayoutLibrary::isBlockedByLock($opening_balance, $debitAmount, $lienAmount, $lockAmount)) {
+            return ['processed' => false];
+        }
+
+        $commissionLibrary = new GetcommissionLibrary();
+        $commission = $commissionLibrary->get_commission($userdetails->scheme_id, $this->provider_id, $amount);
+
+        $this->executePayoutTransfer(
+            $row['mobile_number'] ?? '',
+            $row['email'] ?? ($userdetails->email ?? ''),
+            $row['beneficiary_name'] ?? '',
+            $row['ifsc_code'] ?? '',
+            $row['account_number'] ?? $report->number,
+            $amount,
+            $report->channel,
+            $report->client_id,
+            $report->mode,
+            $user_id,
+            $row['bank_name'] ?? null,
+            $this->provider_id,
+            $retailer,
+            $commission['distributor'] ?? 0,
+            $commission['sdistributor'] ?? 0,
+            $commission['sales_team'] ?? 0,
+            $commission['referral'] ?? 0,
+            $opening_balance,
+            true,
+            $report->id
+        );
+
+        return ['processed' => true];
+    }
+
+    private function resolvePayoutApiId($userdetails, $amount)
+    {
+        $api_id = $userdetails->company->payout_route;
+        $user_id = $userdetails->id;
+        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
+            ->where('maximum_amount', '>=', $amount)
+            ->where(function ($query) use ($user_id) {
+                $query->where('user_id', $user_id)
+                    ->orWhere('user_id', 0)
+                    ->orWhereNull('user_id');
+            })->first();
+        if ($banktransferswitching) {
+            $api_id = $banktransferswitching->api_id ?? $api_id;
+        }
+        return $api_id;
+    }
+
+    private function executePayoutTransfer(
+        $mobile_number,
+        $email,
+        $beneficiary_name,
+        $ifsc_code,
+        $account_number,
+        $amount,
+        $channel_id,
+        $client_id,
+        $mode,
+        $user_id,
+        $bank_name,
+        $provider_id,
+        $retailer,
+        $distributor,
+        $sdistributor,
+        $sales_team,
+        $referral,
+        $opening_balance,
+        $debitWallet,
+        $existingReportId = null
+    ) {
+        $userdetails = User::find($user_id);
+        $decrementAmount = (float)$amount + (float)$retailer;
+        $api_id = $this->resolvePayoutApiId($userdetails, $amount);
+
+        if ($debitWallet) {
+            Balance::where('user_id', $user_id)->decrement('user_balance', $decrementAmount);
+        }
+        $balances = Balance::where('user_id', $user_id)->first();
+        $user_balance = $balances->user_balance;
+
+        $row_data = [
+            'mobile_number' => $mobile_number,
+            'email' => $email,
+            'account_number' => $account_number,
+            'ifsc_code' => $ifsc_code,
+            'beneficiary_name' => $beneficiary_name,
+            'bank_name' => $bank_name,
+        ];
+
+        if ($existingReportId) {
+            $insert_id = $existingReportId;
+            $existingRow = LockHoldPayoutLibrary::decodeRowData(optional(Report::find($insert_id))->row_data);
+            unset($existingRow['lock_hold_flag']);
+            $row_data = array_merge($existingRow, $row_data);
+            Report::where('id', $insert_id)->update([
+                'api_id' => $api_id,
+                'status_id' => 3,
+                'profit' => '-' . $retailer,
+                'opening_balance' => $opening_balance,
+                'total_balance' => $user_balance,
+                'reason' => null,
+                'row_data' => json_encode($row_data),
+            ]);
+        } else {
+            $now = new \DateTime();
+            $ctime = $now->format('Y-m-d H:i:s');
+            $description = $beneficiary_name . ' | ' . $account_number;
+            $insert_id = Report::insertGetId([
+                'number' => $account_number,
+                'provider_id' => $provider_id,
+                'amount' => $amount,
+                'api_id' => $api_id,
+                'status_id' => 3,
+                'created_at' => $ctime,
+                'user_id' => $user_id,
+                'profit' => '-' . $retailer,
+                'mode' => $mode,
+                'ip_address' => request()->ip(),
+                'description' => $description,
+                'opening_balance' => $opening_balance,
+                'total_balance' => $user_balance,
+                'wallet_type' => 1,
+                'channel' => $channel_id,
+                'client_id' => $client_id,
+                'row_data' => json_encode($row_data),
+            ]);
+            if ($mode != 'API') {
+                Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
+            }
+        }
+
+        $response = $this->callPayoutGateway(
+            $api_id,
+            $user_id,
+            $mobile_number,
+            $amount,
+            $beneficiary_name,
+            $account_number,
+            $ifsc_code,
+            $insert_id,
+            $channel_id,
+            $bank_name
+        );
+        $status_id = $response['status_id'];
+        $utr = $response['txnid'];
+        $payid = $response['payid'];
+
+        if ($status_id == 1) {
+            Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $utr, 'payid' => $payid, 'reason' => null]);
+            $library = new Commission_increment();
+            $library->parent_recharge_commission($user_id, $account_number, $insert_id, $provider_id, $amount, $api_id, $retailer, $distributor, $sdistributor, $sales_team, $referral);
+            return Response()->json(['status' => 'success', 'message' => 'Your payout was successful! Thank you for using our service.', 'utr' => $utr, 'payid' => $insert_id]);
+        }
+        if ($status_id == 2) {
+            Balance::where('user_id', $user_id)->increment('user_balance', $decrementAmount);
+            $balance = Balance::where('user_id', $user_id)->first();
+            $user_balance = $balance->user_balance;
+            Report::where('id', $insert_id)->update(['status_id' => 2, 'reason' => $utr, 'total_balance' => $user_balance, 'payid' => $payid]);
+            return Response()->json(['status' => 'failure', 'message' => $utr, 'utr' => '', 'payid' => $insert_id]);
+        }
+
+        Report::where('id', $insert_id)->update(['payid' => $payid, 'reason' => null]);
+        return Response()->json(['status' => 'pending', 'message' => 'Your payout transaction is in process. Please wait for confirmation.', 'utr' => '', 'payid' => $insert_id]);
+    }
+
+    private function callPayoutGateway($api_id, $user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id, $bank_name)
+    {
+        $vender_id = 1;
+        $latitude = '';
+        $longitude = '';
+        if ($api_id == 2) {
+            return Self::callmnppayApi($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 4) {
+            $library = new AccosisLibrary();
+            return $library->impsTransfer($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude);
+        }
+        if ($api_id == 5) {
+            $library = new PaywizeLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 6) {
+            $library = new SprezapayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 7) {
+            $library = new PockethubLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 11) {
+            $library = new RazorpaypayoutLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 10) {
+            $library = new PunjikendraLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 12) {
+            $library = new VtransactLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 14) {
+            $library = new SafepPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 15) {
+            $library = new ZigPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 16) {
+            $library = new QuickPayCashLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 17) {
+            $library = new RojgaarPeLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id, $bank_name);
+        }
+        return ['status_id' => 2, 'txnid' => '', 'payid' => ''];
     }
 
     function callmnppayApi($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id)
