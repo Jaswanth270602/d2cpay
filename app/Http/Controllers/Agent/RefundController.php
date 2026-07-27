@@ -26,6 +26,7 @@ use App\Models\Traceurl;
 use Helpers;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
+use App\Library\FrapPayLibrary;
 use Illuminate\Support\Facades\Log;
 
 
@@ -642,6 +643,133 @@ class RefundController extends Controller
                     ]);
                 } catch (\Exception $e) {
                     Log::error('RojgaarPe payout callback forward failed', ['error' => $e->getMessage(), 'report_id' => $report->id]);
+                }
+            }
+        }
+
+        return response()->json([
+            'received' => true,
+            'status' => true,
+            'message' => 'Callback processed successfully',
+            'report_id' => $report->id,
+        ]);
+    }
+
+    public function frappayPayout(Request $request)
+    {
+        $ctime = now();
+        $payload = $request->all();
+        if (empty($payload)) {
+            $decoded = json_decode((string)$request->getContent(), true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+        $data = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
+
+        Apiresponse::insertGetId([
+            'message' => json_encode($payload),
+            'api_type' => 18,
+            'response_type' => 'call_back',
+            'request_message' => substr((string)$request->getContent(), 0, 65000),
+            'ip_address' => $request->ip(),
+            'created_at' => $ctime,
+        ]);
+
+        $status = FrapPayLibrary::normalizeStatus((string)($data['status'] ?? $payload['status'] ?? ''));
+        if ($status === 'SUCCESS') {
+            $statusId = 1;
+        } elseif ($status === 'FAILED') {
+            $statusId = 2;
+        } else {
+            $statusId = 3;
+        }
+
+        $utr = (string)($data['utr'] ?? $data['providerTxnId'] ?? $payload['utr'] ?? '');
+        $txnId = (string)($data['txnId'] ?? $data['txn_id'] ?? $payload['txnId'] ?? '');
+        $referenceId = (string)($data['referenceId'] ?? $data['reference_id'] ?? $payload['referenceId'] ?? '');
+        $amount = (float)($data['amount'] ?? $payload['amount'] ?? 0);
+
+        $report = null;
+        if ($referenceId !== '' && preg_match('/^FPO\d{6}\d+$/', $referenceId)) {
+            $report = Report::where('payid', $referenceId)->where('api_id', 18)->orderBy('id', 'DESC')->first();
+        }
+        if (!$report && $referenceId !== '') {
+            $report = Report::where('payid', $referenceId)->where('api_id', 18)->orderBy('id', 'DESC')->first();
+        }
+        if (!$report && $txnId !== '') {
+            $report = Report::where('api_id', 18)
+                ->where(function ($q) use ($txnId) {
+                    $q->where('txnid', $txnId)->orWhere('payid', $txnId);
+                })
+                ->orderBy('id', 'DESC')
+                ->first();
+        }
+
+        if (!$report) {
+            Log::warning('FrapPay payout callback report not found', [
+                'referenceId' => $referenceId,
+                'txnId' => $txnId,
+            ]);
+            return response()->json(['status' => false, 'message' => 'Report not found'], 404);
+        }
+
+        Apiresponse::where('api_type', 18)
+            ->where('response_type', 'call_back')
+            ->whereNull('report_id')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->update(['report_id' => $report->id]);
+
+        if ($referenceId !== '' && (string)$report->payid !== $referenceId) {
+            Report::where('id', $report->id)->update(['payid' => $referenceId]);
+            $report->refresh();
+        }
+
+        $mode = 'Call-back';
+        $refundLibrary = new RefundLibrary();
+        $txnUpdateValue = $utr !== '' ? $utr : ($txnId !== '' ? $txnId : (string)($payload['message'] ?? ''));
+        if ($report->wallet_type == 1) {
+            $refundLibrary->update_transaction($statusId, $txnUpdateValue, $report->id, $mode);
+        } elseif ($report->wallet_type == 2) {
+            $refundLibrary->update_transaction_aeps($statusId, $txnUpdateValue, $report->id, $mode);
+        } else {
+            Report::where('id', $report->id)->where('status_id', 3)->update([
+                'status_id' => $statusId,
+                'txnid' => $txnUpdateValue,
+            ]);
+        }
+
+        $member = Member::where('user_id', $report->user_id)->first();
+        $payoutCallbackUrl = $member->payoutcallbackurl ?? '';
+        if (empty($payoutCallbackUrl)) {
+            $payoutCallbackUrl = $member->call_back_url ?? '';
+        }
+        if (!empty($payoutCallbackUrl)) {
+            $userDetails = User::find($report->user_id);
+            if ($userDetails) {
+                $merchantStatus = $statusId === 1 ? 'success' : ($statusId === 2 ? 'failed' : 'pending');
+                $queryParams = [
+                    'status' => $merchantStatus,
+                    'client_id' => $report->client_id ?: $report->id,
+                    'amount' => $amount > 0 ? $amount : (float)$report->amount,
+                    'utr' => $utr,
+                    'txnid' => $report->id,
+                ];
+                $signatureString = http_build_query($queryParams);
+                $queryParams['signature'] = hash_hmac('sha256', $signatureString, $userDetails->api_token);
+                $url = $payoutCallbackUrl . '?' . http_build_query($queryParams);
+                try {
+                    $response = Helpers::pay_curl_get($url);
+                    Traceurl::insertGetId([
+                        'user_id' => $report->user_id,
+                        'url' => $url,
+                        'number' => $userDetails->mobile ?? '',
+                        'response_message' => $response,
+                        'created_at' => $ctime,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('FrapPay payout callback forward failed', ['error' => $e->getMessage(), 'report_id' => $report->id]);
                 }
             }
         }

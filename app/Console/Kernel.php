@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:VtransactPayoutStatus')->everyFiveMinutes();
         $schedule->command('qpc:sync-pending')->everyFiveMinutes();
         $schedule->command('rojgaarpe:sync-pending')->everyFiveMinutes();
+        $schedule->command('frappay:sync-pending')->everyMinute();
     }
 
     /**

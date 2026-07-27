@@ -40,6 +40,8 @@ Route::prefix('call-back')->group(function () {
     Route::any('/qpc-payout', [App\Http\Controllers\Agent\RefundController::class, 'qpcPayout']);
     Route::any('/rojgaarpe-payin', [App\Http\Controllers\Agent\RojgaarPeController::class, 'payinCallback']);
     Route::any('/rojgaarpe-payout', [App\Http\Controllers\Agent\RefundController::class, 'rojgaarpePayout']);
+    Route::any('/frappay-payin', [App\Http\Controllers\Agent\FrapPayController::class, 'payinCallback']);
+    Route::any('/frappay-payout', [App\Http\Controllers\Agent\RefundController::class, 'frappayPayout']);
     Route::any('/vtransact-payout', [App\Http\Controllers\Agent\RefundController::class, 'vtransactPayout']);
     Route::any('/safeppay-payout', [App\Http\Controllers\Agent\RefundController::class, 'safepPayout']);
 });
@@ -278,6 +280,11 @@ Route::prefix('add-money/v9')->group(function () {
 Route::prefix('add-money/v10')->group(function () {
     Route::post('/createOrder', [App\Http\Controllers\Agent\RojgaarPeController::class, 'createOrderApi'])->middleware('auth:api');
     Route::post('/status-enquiry', [App\Http\Controllers\Agent\RojgaarPeController::class, 'statusEnquiryApi'])->middleware('auth:api');
+});
+
+Route::prefix('add-money/v11')->group(function () {
+    Route::post('/createOrder', [App\Http\Controllers\Agent\FrapPayController::class, 'createOrderApi'])->middleware('auth:api');
+    Route::post('/status-enquiry', [App\Http\Controllers\Agent\FrapPayController::class, 'statusEnquiryApi'])->middleware('auth:api');
 });
 
 

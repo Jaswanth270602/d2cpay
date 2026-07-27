@@ -14,6 +14,7 @@
                     $library = new \App\Library\BasicLibrary;
                     $payinNineActive = ($library->getActiveService(340, Auth::id())['status_id'] ?? 0) == 1;
                     $payinTenActive = ($library->getActiveService(341, Auth::id())['status_id'] ?? 0) == 1;
+                    $payinElevenActive = ($library->getActiveService(342, Auth::id())['status_id'] ?? 0) == 1;
                 @endphp
                 <nav class="nav main-nav-column mg-b-20">
                     <a class="nav-link {{(Request::is('*settings') ? 'active' : '')}}" href="{{url('agent/developer/settings')}}">Settings</a>
@@ -33,6 +34,9 @@
                     @endif
                     @if($payinTenActive)
                     <a class="nav-link {{(Request::is('*payin-ten-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-ten-docs')}}">Payin 10</a>
+                    @endif
+                    @if($payinElevenActive)
+                    <a class="nav-link {{(Request::is('*payin-eleven-docs') ? 'active' : '')}}" href="{{url('agent/developer/payin-eleven-docs')}}">Payin 11</a>
                     @endif
                     <input type="hidden" id="BiometricData">
                 </nav>

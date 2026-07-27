@@ -357,12 +357,12 @@ namespace App\library {
                 return true;
             }
 
-            // Payin 9 (QPC api 16 / provider 340) / Payin 10 (RojgaarPe api 17 / provider 341)
-            if (in_array((int)$report->provider_id, [340, 341], true)) {
+            // Payin 9 (QPC api 16 / provider 340) / Payin 10 (RojgaarPe api 17 / provider 341) / Payin 11 (FrapPay api 18 / provider 342)
+            if (in_array((int)$report->provider_id, [340, 341, 342], true)) {
                 return true;
             }
 
-            return in_array((int)$report->api_id, [16, 17], true);
+            return in_array((int)$report->api_id, [16, 17, 18], true);
         }
 
         /**

@@ -682,6 +682,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payin-eight-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinEightDocs']);
             Route::get('/payin-nine-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinNineDocs']);
             Route::get('/payin-ten-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinTenDocs']);
+            Route::get('/payin-eleven-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinElevenDocs']);
 
         });
 
@@ -815,6 +816,15 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/create-order', [App\Http\Controllers\Agent\RojgaarPeController::class, 'createOrderWeb']);
             Route::post('/order-status', [App\Http\Controllers\Agent\RojgaarPeController::class, 'webOrderStatus']);
             Route::get('/view-qrcode', [App\Http\Controllers\Agent\RojgaarPeController::class, 'viewQrcode']);
+        });
+
+        Route::group(['prefix' => 'add-money/v11', 'middleware' => 'auth'], function () {
+            Route::get('/welcome', [App\Http\Controllers\Agent\FrapPayController::class, 'welcome']);
+            Route::post('/create-order', [App\Http\Controllers\Agent\FrapPayController::class, 'createOrderWeb']);
+            Route::post('/order-status', [App\Http\Controllers\Agent\FrapPayController::class, 'webOrderStatus']);
+            Route::post('/fetch-qr', [App\Http\Controllers\Agent\FrapPayController::class, 'fetchQr']);
+            Route::get('/checkout/{id}', [App\Http\Controllers\Agent\FrapPayController::class, 'checkout']);
+            Route::get('/view-qrcode', [App\Http\Controllers\Agent\FrapPayController::class, 'viewQrcode']);
         });
 
 

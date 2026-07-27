@@ -508,4 +508,16 @@ class DeveloperController extends Controller
         return view('agent.developer.payinTenDocs')->with($data);
     }
 
+    function payinElevenDocs()
+    {
+        $library = new BasicLibrary();
+        $activeService = $library->getActiveService(342, Auth::id());
+        if (($activeService['status_id'] ?? 0) != 1) {
+            return redirect()->back();
+        }
+
+        $data = array('page_title' => 'Payin 11 Docs');
+        return view('agent.developer.payinElevenDocs')->with($data);
+    }
+
 }

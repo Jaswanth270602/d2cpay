@@ -39,7 +39,11 @@ use App\Library\SafepPayLibrary;
 use App\Library\ZigPayLibrary;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
+<<<<<<< Updated upstream
 use App\Library\LockHoldPayoutLibrary;
+=======
+use App\Library\FrapPayLibrary;
+>>>>>>> Stashed changes
 use App\Imports\BulkUpload;
 use App\Exports\BulkPayoutTemplateExport;
 
@@ -461,6 +465,116 @@ class DirectTransferController extends Controller
                     'utr' => '',
                     'payid' => '',
                 ]);
+<<<<<<< Updated upstream
+=======
+                if ($mode != 'API') {
+                    Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
+                }
+
+                $vender_id = 1;
+                $latitude = '';
+                $longitude = '';
+                if ($api_id == 2) {
+                    $response = Self::callmnppayApi($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                } elseif ($api_id == 4) {
+                    $library = new AccosisLibrary();
+                    $response = $library->impsTransfer($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $vender_id, $api_id, $latitude, $longitude);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                } elseif ($api_id == 5) {
+                    $library = new PaywizeLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                } elseif ($api_id == 6) {
+                    $library = new SprezapayLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                } elseif ($api_id == 7) {
+                    $library = new PockethubLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                } elseif ($api_id == 11) {
+                    $library = new RazorpaypayoutLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 10){
+                    $library = new PunjikendraLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 12){
+                    $library = new VtransactLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 14){
+                    $library = new SafepPayLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 15){
+                    $library = new ZigPayLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 16){
+                    $library = new QuickPayCashLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 17){
+                    $library = new RojgaarPeLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }elseif ($api_id == 18){
+                    $library = new FrapPayLibrary();
+                    $response = $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+                    $status_id = $response['status_id'];
+                    $utr = $response['txnid'];
+                    $payid = $response['payid'];
+                }else {
+                    $status_id = 2;
+                    $utr = '';
+                    $payid = '';
+                }
+                if ($status_id == 1) {
+                    Report::where('id', $insert_id)->update(['status_id' => 1, 'txnid' => $utr, 'payid' => $payid]);
+                    $library = new Commission_increment();
+                    $library->parent_recharge_commission($user_id, $account_number, $insert_id, $provider_id, $amount, $api_id, $retailer, $distributor, $sdistributor, $sales_team, $referral);
+                    return Response()->json(['status' => 'success', 'message' => 'Your payout was successful! Thank you for using our service.', 'utr' => $utr, 'payid' => $insert_id]);
+                } elseif ($status_id == 2) {
+                    Balance::where('user_id', $user_id)->increment('user_balance', $decrementAmount);
+                    $balance = Balance::where('user_id', $user_id)->first();
+                    $user_balance = $balance->user_balance;
+                    Report::where('id', $insert_id)->update(['status_id' => 2, 'reason' => $utr, 'total_balance' => $user_balance, 'payid' => $payid]);
+                    $message = ($utr == 'Insufficient fund') ? 'Transaction Failed' : 'Transaction Failed. Please try again.`';
+                    return Response()->json(['status' => 'failure', 'message' => $utr, 'utr' => '', 'payid' => $insert_id]);
+                } else {
+                    Report::where('id', $insert_id)->update(['payid' => $payid]);
+                    return Response()->json(['status' => 'pending', 'message' => 'Your payout transaction is in process. Please wait for confirmation.', 'utr' => '', 'payid' => $insert_id]);
+                }
+            } else {
+                return Response()->json(['status' => 'failure', 'message' => 'Insufficient funds', 'utr' => '', 'payid' => '']);
+>>>>>>> Stashed changes
             }
 
             if (LockHoldPayoutLibrary::isBlockedByLock($opening_balance, $debitAmount, $lienAmount, $lockAmount)) {
