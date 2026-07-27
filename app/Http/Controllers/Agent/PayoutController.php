@@ -717,14 +717,10 @@ class PayoutController extends Controller
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }elseif ($api_id == 17){
             $library = new RojgaarPeLibrary();
-<<<<<<< Updated upstream
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, 2, $bank_name);
-=======
-            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }elseif ($api_id == 18){
             $library = new FrapPayLibrary();
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
->>>>>>> Stashed changes
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];
     }
