@@ -435,7 +435,9 @@
                                             <option value="14" @if($payout_route == 14) selected @endif>SafepPay</option>
                                             <option value="15" @if($payout_route == 15) selected @endif>ZigPay</option>
                                             <option value="16" @if($payout_route == 16) selected @endif>Quick Pay Cash</option>
+                                           
                                             <option value="17" @if($payout_route == 17) selected @endif>RojgaarPe</option>
+                                            <option value="18" @if($payout_route == 18) selected @endif>FrapPay</option>
                                         </select>
                                         <ul class="parsley-errors-list filled">
                                             <li class="parsley-required" id="payout_route_errors"></li>

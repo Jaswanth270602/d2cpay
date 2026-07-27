@@ -370,9 +370,17 @@ class FrapPayController extends Controller
         Gatewayorder::where('id', $gatewayOrderId)->update([
             'report_id' => $reportId,
             'remark' => $txnId,
-            // Keep access key for later QR retry if needed (prefix-safe).
-            'purpose' => $accessKey !== '' ? ('Add Money|' . $accessKey) : 'Add Money',
+            // Keep purpose short for DBs where purpose is still varchar(55).
+            // Store access key / checkout URL in redirect_url (+ cache) for QR/checkout.
+            'purpose' => 'Add Money',
+            'redirect_url' => $accessKey !== ''
+                ? $this->fpLibrary->hostedCheckoutUrl($accessKey, $environment ?: 'production')
+                : null,
         ]);
+
+        if ($accessKey !== '') {
+            Cache::put('frappay:access_key:' . $gatewayOrderId, $accessKey, now()->addHours(6));
+        }
 
         if ($providerStatus === 'FAILED') {
             $this->markFailed(Gatewayorder::find($gatewayOrderId), $intent['message'] ?? 'Failed');
@@ -503,8 +511,22 @@ class FrapPayController extends Controller
     {
         $purpose = (string)($order->purpose ?? '');
         if (str_starts_with($purpose, 'Add Money|')) {
-            return trim(substr($purpose, strlen('Add Money|')));
+            $fromPurpose = trim(substr($purpose, strlen('Add Money|')));
+            if ($fromPurpose !== '') {
+                return $fromPurpose;
+            }
         }
+
+        $cached = (string)Cache::get('frappay:access_key:' . $order->id, '');
+        if ($cached !== '') {
+            return $cached;
+        }
+
+        $redirect = (string)($order->redirect_url ?? '');
+        if (preg_match('#/pay/([a-f0-9]+)#i', $redirect, $m)) {
+            return $m[1];
+        }
+
         return '';
     }
 
@@ -879,7 +901,17 @@ class FrapPayController extends Controller
             'message' => json_encode($payload),
             'api_type' => $this->api_id,
             'response_type' => 'call_back',
-            'request_message' => substr((string)($request->getContent() ?: json_encode($request->query())), 0, 65000),
+            'request_message' => substr(json_encode([
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'url' => $request->fullUrl(),
+                'query' => $request->query(),
+                'headers' => [
+                    'content-type' => $request->header('content-type'),
+                    'user-agent' => $request->userAgent(),
+                ],
+                'raw' => substr((string)$request->getContent(), 0, 20000),
+            ]), 0, 65000),
             'ip_address' => $request->ip(),
             'created_at' => $ctime,
         ]);
@@ -929,8 +961,17 @@ class FrapPayController extends Controller
         }
 
         if (!$order) {
-            $this->reconcilePendingFromPartnerWallet();
-            return response()->json(['received' => true, 'status' => false, 'message' => 'Order not found'], 404);
+            // Always HTTP 200 so FrapPay does not treat the webhook URL as broken.
+            try {
+                $this->reconcilePendingFromPartnerWallet();
+            } catch (\Throwable $e) {
+                Log::error('FrapPay callback reconcile failed', ['error' => $e->getMessage()]);
+            }
+            return response()->json([
+                'received' => true,
+                'status' => false,
+                'message' => 'Order not found — payload logged',
+            ], 200);
         }
 
         Apiresponse::where('api_type', $this->api_id)
@@ -956,7 +997,7 @@ class FrapPayController extends Controller
             $this->syncPendingOrder($order);
         }
 
-        return response()->json(['received' => true, 'status' => true, 'message' => 'Callback processed']);
+        return response()->json(['received' => true, 'status' => true, 'message' => 'Callback processed'], 200);
     }
 
     public function viewQrcode(Request $request)
