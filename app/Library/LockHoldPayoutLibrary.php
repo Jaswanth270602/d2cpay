@@ -129,7 +129,9 @@ class LockHoldPayoutLibrary
             if (!self::hasSufficientWallet($balance, $debitAmount, $lien)) {
                 $row['lock_hold_flag'] = self::FLAG_INSUFFICIENT;
                 Report::where('id', $report->id)->update([
+                    'status_id' => 2,
                     'reason' => self::REASON_INSUFFICIENT,
+                    'total_balance' => $balance,
                     'row_data' => json_encode($row),
                 ]);
                 $keptInsufficient++;

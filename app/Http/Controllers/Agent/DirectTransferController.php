@@ -456,12 +456,22 @@ class DirectTransferController extends Controller
             $debitAmount = (float)$amount + (float)$retailer;
 
             if ($debitAmount < 10 || !LockHoldPayoutLibrary::hasSufficientWallet($opening_balance, $debitAmount, $lienAmount)) {
-                return Response()->json([
-                    'status' => 'failure',
-                    'message' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
-                    'utr' => '',
-                    'payid' => '',
-                ]);
+                return $this->createInsufficientWalletFailedPayout(
+                    $mobile_number,
+                    $email,
+                    $beneficiary_name,
+                    $ifsc_code,
+                    $account_number,
+                    $amount,
+                    $channel_id,
+                    $client_id,
+                    $mode,
+                    $user_id,
+                    $bank_name,
+                    $provider_id,
+                    $retailer,
+                    $opening_balance
+                );
             }
 
             if (LockHoldPayoutLibrary::isBlockedByLock($opening_balance, $debitAmount, $lienAmount, $lockAmount)) {
@@ -575,6 +585,69 @@ class DirectTransferController extends Controller
         ]);
     }
 
+    private function createInsufficientWalletFailedPayout(
+        $mobile_number,
+        $email,
+        $beneficiary_name,
+        $ifsc_code,
+        $account_number,
+        $amount,
+        $channel_id,
+        $client_id,
+        $mode,
+        $user_id,
+        $bank_name,
+        $provider_id,
+        $retailer,
+        $opening_balance
+    ) {
+        $userdetails = User::find($user_id);
+        $api_id = $this->resolvePayoutApiId($userdetails, $amount);
+        $now = new \DateTime();
+        $ctime = $now->format('Y-m-d H:i:s');
+        $description = $beneficiary_name . ' | ' . $account_number;
+        $row_data = [
+            'mobile_number' => $mobile_number,
+            'email' => $email,
+            'account_number' => $account_number,
+            'ifsc_code' => $ifsc_code,
+            'beneficiary_name' => $beneficiary_name,
+            'bank_name' => $bank_name,
+            'lock_hold_flag' => LockHoldPayoutLibrary::FLAG_INSUFFICIENT,
+        ];
+
+        $insert_id = Report::insertGetId([
+            'number' => $account_number,
+            'provider_id' => $provider_id,
+            'amount' => $amount,
+            'api_id' => $api_id,
+            'status_id' => 2,
+            'created_at' => $ctime,
+            'user_id' => $user_id,
+            'profit' => '-' . $retailer,
+            'mode' => $mode,
+            'ip_address' => request()->ip(),
+            'description' => $description,
+            'opening_balance' => $opening_balance,
+            'total_balance' => $opening_balance,
+            'wallet_type' => 1,
+            'channel' => $channel_id,
+            'client_id' => $client_id,
+            'reason' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+            'row_data' => json_encode($row_data),
+        ]);
+        if ($mode != 'API') {
+            Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
+        }
+
+        return Response()->json([
+            'status' => 'failure',
+            'message' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+            'utr' => '',
+            'payid' => $insert_id,
+        ]);
+    }
+
     /**
      * Resume a lock-held payout after admin reduces/removes Lock Amount.
      */
@@ -611,7 +684,9 @@ class DirectTransferController extends Controller
         if (!LockHoldPayoutLibrary::hasSufficientWallet($opening_balance, $debitAmount, $lienAmount)) {
             $row['lock_hold_flag'] = LockHoldPayoutLibrary::FLAG_INSUFFICIENT;
             Report::where('id', $report->id)->update([
+                'status_id' => 2,
                 'reason' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+                'total_balance' => $opening_balance,
                 'row_data' => json_encode($row),
             ]);
             return ['processed' => false, 'insufficient' => true];

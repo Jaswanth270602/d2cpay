@@ -37,6 +37,7 @@ use App\Library\ZigPayLibrary;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
+use App\Library\LockHoldPayoutLibrary;
 use DB;
 
 //dmt service
@@ -598,23 +599,23 @@ class PayoutController extends Controller
                         $rf = $commission['referral'];
                         $opening_balance = $userdetails->balance->user_balance;
                         $sumamount = $amount + $userdetails->lock_amount + $retailer;
+                        $api_id = $userdetails->company->payout_route;
+                        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
+                            ->where('maximum_amount', '>=', $amount)
+                            ->where(function ($query) use ($user_id) {
+                                $query->where('user_id', $user_id)
+                                    ->orWhere('user_id', 0) // Handle case where user_id is 0
+                                    ->orWhereNull('user_id'); // Handle case where user_id might not be set
+                            })->first();
+                        if ($banktransferswitching) {
+                            $api_id = $banktransferswitching->api_id ?? $api_id;
+                        }
                         if ($opening_balance >= $sumamount && $sumamount >= 9) {
                             $decrementAmount = $amount + $retailer;
                             Balance::where('user_id', $user_id)->decrement('user_balance', $decrementAmount);
                             $balance = Balance::where('user_id', $user_id)->first();
                             $user_balance = $balance->user_balance;
                             $description = "Payout to  $account_number";
-                            $api_id = $userdetails->company->payout_route;
-                            $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
-                                ->where('maximum_amount', '>=', $amount)
-                                ->where(function ($query) use ($user_id) {
-                                    $query->where('user_id', $user_id)
-                                        ->orWhere('user_id', 0) // Handle case where user_id is 0
-                                        ->orWhereNull('user_id'); // Handle case where user_id might not be set
-                                })->first();
-                            if ($banktransferswitching) {
-                                $api_id = $banktransferswitching->api_id ?? $api_id;
-                            }
                             $insert_id = Report::insertGetId([
                                 'number' => $account_number,
                                 'provider_id' => $provider_id,
@@ -663,7 +664,35 @@ class PayoutController extends Controller
                                 return ['status' => 'success', 'message' => 'Transaction process!', 'utr' => '', 'payid' => $insert_id];
                             }
                         } else {
-                            return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
+                            $fee = ((float)$retailer == 0) ? 10 : $retailer;
+                            $insert_id = Report::insertGetId([
+                                'number' => $account_number,
+                                'provider_id' => $provider_id,
+                                'amount' => $amount,
+                                'api_id' => $api_id,
+                                'status_id' => 2,
+                                'created_at' => $ctime,
+                                'user_id' => $user_id,
+                                'profit' => '-' . $fee,
+                                'mode' => $mode,
+                                'ip_address' => $request_ip,
+                                'description' => "Payout to  $account_number",
+                                'opening_balance' => $opening_balance,
+                                'total_balance' => $opening_balance,
+                                'credit_by' => $user_id,
+                                'wallet_type' => 1,
+                                'latitude' => $latitude,
+                                'longitude' => $longitude,
+                                'reason' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+                                'client_id' => null,
+                            ]);
+                            Report::where('id', $insert_id)->update(['client_id' => $insert_id]);
+                            return Response()->json([
+                                'status' => 'failure',
+                                'message' => LockHoldPayoutLibrary::REASON_INSUFFICIENT,
+                                'utr' => '',
+                                'payid' => $insert_id,
+                            ]);
                         }
                     } else {
                         return Response()->json(['status' => 'failure', 'message' => 'password is wrong']);
