@@ -204,7 +204,7 @@ class UpitransferController extends Controller
                     'message' => 'data fetched successfully'
                 ]);
             } else {
-                return Response()->json(['status' => 'failure', 'message' => 'insufficient funds kindly refill your wallet!']);
+                return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
             }
         } else {
             $message = ($userDetails->company->server_down == 1) ? 'Service not active!' : $userDetails->company->server_message;

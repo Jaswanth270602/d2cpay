@@ -159,7 +159,7 @@ class ReportController extends Controller
     {
         $reason = trim((string)$report->reason);
         if ($reason !== '') {
-            return $reason;
+            return $this->maskInsufficientReason($reason);
         }
 
         if (in_array((int)$report->status_id, [1, 6], true)) {
@@ -173,7 +173,7 @@ class ReportController extends Controller
         $txnid = trim((string)$report->txnid);
         if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
             if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
-                return $txnid;
+                return $this->maskInsufficientReason($txnid);
             }
         }
 
@@ -192,11 +192,16 @@ class ReportController extends Controller
         if ($latestApi) {
             $apiMessage = trim($this->prettifyApiPayload($latestApi->message));
             if ($apiMessage !== '' && !$this->isPendingStatusPollNoise($latestApi, $apiMessage, (int)$report->status_id)) {
-                return $apiMessage;
+                return $this->maskInsufficientReason($apiMessage);
             }
         }
 
         return 'Failure reason not provided by provider.';
+    }
+
+    private function maskInsufficientReason(string $reason): string
+    {
+        return \App\Library\LockHoldPayoutLibrary::merchantFacingFailureReason($reason);
     }
 
     private function isPendingStatusPollNoise(?Apiresponse $apiRow, string $apiMessage, int $statusId): bool

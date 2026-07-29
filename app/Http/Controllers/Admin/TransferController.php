@@ -999,7 +999,7 @@ class TransferController extends Controller
                     ]);
                     return Response()->json(['status' => 'success', 'message' => 'Your funds have been successfully moved from your Payin Wallet to your Payout Wallet.']);
                 } else {
-                    return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund in payin wallet!']);
+                    return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
                 }
             } else {
                 return Response()->json(['status' => 'failure', 'message' => 'Password is wrong']);

@@ -268,7 +268,7 @@ class DirectTransferController extends Controller
                 }
 
             } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund.']);
+                return Response()->json(['status' => 'failure', 'message' => LockHoldPayoutLibrary::REASON_INSUFFICIENT]);
             }
         } else {
             $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
@@ -776,8 +776,12 @@ class DirectTransferController extends Controller
             Balance::where('user_id', $user_id)->increment('user_balance', $decrementAmount);
             $balance = Balance::where('user_id', $user_id)->first();
             $user_balance = $balance->user_balance;
-            Report::where('id', $insert_id)->update(['status_id' => 2, 'reason' => $utr, 'total_balance' => $user_balance, 'payid' => $payid]);
-            return Response()->json(['status' => 'failure', 'message' => $utr, 'utr' => '', 'payid' => $insert_id]);
+            $failureReason = LockHoldPayoutLibrary::merchantFacingFailureReason((string)$utr);
+            if ($failureReason === '') {
+                $failureReason = LockHoldPayoutLibrary::REASON_BANK_DOWNTIME;
+            }
+            Report::where('id', $insert_id)->update(['status_id' => 2, 'reason' => $failureReason, 'total_balance' => $user_balance, 'payid' => $payid]);
+            return Response()->json(['status' => 'failure', 'message' => $failureReason, 'utr' => '', 'payid' => $insert_id]);
         }
 
         Report::where('id', $insert_id)->update(['payid' => $payid, 'reason' => null]);

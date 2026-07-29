@@ -12,7 +12,35 @@ class LockHoldPayoutLibrary
     public const FLAG = 'waiting_for_bank_confirmation';
     public const FLAG_INSUFFICIENT = 'insufficient_wallet_balance';
     public const REASON_WAITING = 'Waiting for Bank Confirmation';
-    public const REASON_INSUFFICIENT = 'Insufficient Wallet Balance';
+    public const REASON_INSUFFICIENT = 'Bank Downtime.Please try again after some time.';
+    public const REASON_BANK_DOWNTIME = 'Bank Downtime.Please try again after some time.';
+
+    /**
+     * Hide provider/wallet technical failure text from merchants.
+     */
+    public static function merchantFacingFailureReason(?string $reason): string
+    {
+        $reason = trim((string)$reason);
+        if ($reason === '') {
+            return $reason;
+        }
+
+        $needles = [
+            'insufficient',
+            'consecutive requests',
+            'break the pattern',
+            'maximum number of',
+            'try a different amount',
+            'balance is low',
+        ];
+        foreach ($needles as $needle) {
+            if (stripos($reason, $needle) !== false) {
+                return self::REASON_BANK_DOWNTIME;
+            }
+        }
+
+        return $reason;
+    }
 
     public static function isLockHoldPending(Report $report): bool
     {

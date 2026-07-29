@@ -382,7 +382,7 @@ class DownloadController extends Controller
     {
         $reason = trim((string)$report->reason);
         if ($reason !== '') {
-            return $reason;
+            return $this->maskInsufficientReason($reason);
         }
 
         if (in_array((int)$report->status_id, [1, 6], true)) {
@@ -396,7 +396,7 @@ class DownloadController extends Controller
         $txnid = trim((string)$report->txnid);
         if (in_array((int)$report->status_id, [2, 5], true)) {
             if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
-                return $txnid;
+                return $this->maskInsufficientReason($txnid);
             }
         }
 
@@ -416,11 +416,16 @@ class DownloadController extends Controller
             $apiMessage = trim(RojgaarPeLibrary::prettifyApiLogMessage($latestApi->message));
             $responseType = (string)($latestApi->response_type ?? '');
             if ($apiMessage !== '' && !RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType)) {
-                return $apiMessage;
+                return $this->maskInsufficientReason($apiMessage);
             }
         }
 
         return '';
+    }
+
+    private function maskInsufficientReason(string $reason): string
+    {
+        return \App\Library\LockHoldPayoutLibrary::merchantFacingFailureReason($reason);
     }
 
     function DownloadPendingReport($fromdate, $todate)

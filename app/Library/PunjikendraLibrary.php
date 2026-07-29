@@ -47,7 +47,7 @@ namespace App\library {
             } elseif ($tstatus == 'Failed') {
                 $message = $res->message ?? 'Transaction Failed';
                 if (Str::startsWith($message, 'Insufficient balance')) {
-                    $message = 'Transaction Failed please try after some time';
+                    $message = 'Bank Downtime.Please try again after some time.';
                 }
                 return ['status_id' => 2, 'txnid' => $message, 'payid' => ''];
             } else {

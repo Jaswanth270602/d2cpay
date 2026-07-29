@@ -474,7 +474,7 @@ class Moneyv2Controller extends Controller
                     return Response()->json(['status' => 'failure', 'message' => "You don't have permission to access this page"]);
                 }
             } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund.']);
+                return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
             }
         } else {
             $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
@@ -672,7 +672,7 @@ class Moneyv2Controller extends Controller
                     'reports' => $reports,
                 ]);
             }else{
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund.']);
+                return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
             }
         } else {
             $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;

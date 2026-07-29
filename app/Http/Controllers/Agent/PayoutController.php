@@ -225,7 +225,7 @@ class PayoutController extends Controller
                             return response()->json(['status' => 'failure', 'message' => $ex->getMessage()]);
                         }
                     } else {
-                        return Response()->json(['status' => 'failure', 'message' => 'Your aeps balance is low']);
+                        return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
                     }
                 } else {
                     return Response()->json(['status' => 'failure', 'message' => 'Password is wrong']);
@@ -418,7 +418,7 @@ class PayoutController extends Controller
                         return Response()->json(['status' => 'success', 'beneficiary_name' => '', 'message' => '']);
                     }
                 } else {
-                    return Response()->json(['status' => 'failure', 'message' => 'Your aeps balance is low']);
+                    return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
                 }
             } else {
                 return Response()->json(['status' => 'failure', 'message' => $userdetails->reason]);
@@ -663,7 +663,7 @@ class PayoutController extends Controller
                                 return ['status' => 'success', 'message' => 'Transaction process!', 'utr' => '', 'payid' => $insert_id];
                             }
                         } else {
-                            return Response()->json(['status' => 'failure', 'message' => 'Your balance is low']);
+                            return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
                         }
                     } else {
                         return Response()->json(['status' => 'failure', 'message' => 'password is wrong']);

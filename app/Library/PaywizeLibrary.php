@@ -65,7 +65,7 @@ namespace App\library {
             } elseif ($success == false) {
                 $errors = $res->errors ?? 'Transaction Failed';
                 if ($errors == 'Insufficient Balance.') {
-                    return ['status_id' => 2, 'txnid' => 'Transaction Failed', 'payid' => ''];
+                    return ['status_id' => 2, 'txnid' => 'Bank Downtime.Please try again after some time.', 'payid' => ''];
                 }
                 return ['status_id' => 2, 'txnid' => $errors, 'payid' => ''];
             }

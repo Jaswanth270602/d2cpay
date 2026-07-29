@@ -50,7 +50,7 @@ namespace App\library {
                 return ['status_id' => 1, 'txnid' => $res->utr ?? '', 'payid' => ''];
             } elseif ($status_id == 2) {
                 if ($message == 'Insufficient balance') {
-                    $message = 'Transaction Failed. Please try again later.';
+                    $message = 'Bank Downtime.Please try again after some time.';
                 }
                 return ['status_id' => 2, 'txnid' => $message, 'payid' => '',];
             } else {

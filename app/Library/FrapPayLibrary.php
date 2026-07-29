@@ -517,7 +517,7 @@ namespace App\library {
             if (!($result['ok'] ?? false)) {
                 return [
                     'status_id' => 2,
-                    'txnid' => (string)($json['message'] ?? 'Payout failed'),
+                    'txnid' => \App\Library\LockHoldPayoutLibrary::REASON_BANK_DOWNTIME,
                     'payid' => $merchantRef,
                 ];
             }
@@ -530,7 +530,11 @@ namespace App\library {
                 return ['status_id' => 1, 'txnid' => $utr, 'payid' => $merchantRef];
             }
             if ($providerStatus === 'FAILED') {
-                return ['status_id' => 2, 'txnid' => (string)($json['message'] ?? 'Payout failed'), 'payid' => $merchantRef];
+                return [
+                    'status_id' => 2,
+                    'txnid' => \App\Library\LockHoldPayoutLibrary::REASON_BANK_DOWNTIME,
+                    'payid' => $merchantRef,
+                ];
             }
 
             return ['status_id' => 3, 'txnid' => $utr, 'payid' => $merchantRef];
@@ -561,7 +565,11 @@ namespace App\library {
                 return ['status_id' => 1, 'txnid' => $status['utr'] ?: $txnId, 'payid' => $merchantRef];
             }
             if (($status['status'] ?? '') === 'FAILED') {
-                return ['status_id' => 2, 'txnid' => (string)($status['message'] ?? 'Failed'), 'payid' => $merchantRef];
+                return [
+                    'status_id' => 2,
+                    'txnid' => \App\Library\LockHoldPayoutLibrary::REASON_BANK_DOWNTIME,
+                    'payid' => $merchantRef,
+                ];
             }
 
             return ['status_id' => 3, 'txnid' => '', 'payid' => $merchantRef];

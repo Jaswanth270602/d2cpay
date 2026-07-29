@@ -513,7 +513,7 @@ class Moneyv1Controller extends Controller
                 }
 
             } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund.']);
+                return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
             }
         } else {
             $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
@@ -711,7 +711,7 @@ class Moneyv1Controller extends Controller
                     'reports' => $reports,
                 ]);
             } else {
-                return Response()->json(['status' => 'failure', 'message' => 'Insufficient fund.']);
+                return Response()->json(['status' => 'failure', 'message' => 'Bank Downtime.Please try again after some time.']);
             }
         } else {
             $message = ($userdetails->company->server_down == 1) ? 'Service not active!' : $userdetails->company->server_message;
