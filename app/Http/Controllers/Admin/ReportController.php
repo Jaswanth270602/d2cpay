@@ -169,14 +169,13 @@ class ReportController extends Controller
 
         if (Auth::User()->role_id == 1) {
             if ($api_id == 0) {
-                $database_api = Api::get(['id'])->toArray();
-                $old_id = Status::where('id', 0)->get('id')->toArray();
-                $api_id = array_merge($database_api, $old_id);
+                // Include api_id 0 (Balance Debit/Credit ledger rows with no gateway).
+                $api_id = array_merge(Api::pluck('id')->all(), [0]);
             } else {
-                $api_id = Api::where('id', $api_id)->get('id');
+                $api_id = Api::where('id', $api_id)->pluck('id')->all();
             }
         } else {
-            $api_id = Api::get('id');
+            $api_id = array_merge(Api::pluck('id')->all(), [0]);
         }
 
         $totalRecords = Report::select('count(*) as allcount')

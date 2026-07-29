@@ -303,9 +303,10 @@ class DownloadController extends Controller
             $provider_id = Provider::where('id', $providerId)->get(['id']);
         }
         if ($apiId == 0) {
-            $api_id = Api::get(['id']);
+            // Include api_id 0 (Balance Debit/Credit ledger rows with no gateway).
+            $api_id = array_merge(Api::pluck('id')->all(), [0]);
         } else {
-            $api_id = Api::where('id', $apiId)->get(['id']);
+            $api_id = Api::where('id', $apiId)->pluck('id')->all();
         }
         $reports = Report::whereIn('user_id', $my_down_member)
             ->whereDate('created_at', '>=', $fromdate)
