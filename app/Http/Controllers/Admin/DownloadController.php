@@ -29,6 +29,9 @@ use App\Models\Service;
 use App\Models\Apicommreport;
 use App\Library\MemberLibrary;
 use App\Library\BasicLibrary;
+use App\Library\RojgaarPeLibrary;
+use App\Models\Apiresponse;
+use App\Models\Gatewayorder;
 
 
 class DownloadController extends Controller
@@ -321,35 +324,103 @@ class DownloadController extends Controller
             } else {
                 $vendor = $this->brand_name;
             }
+            $wallet_type = match ((int)$value->wallet_type) {
+                1 => 'Payout',
+                2 => 'Payin',
+                default => '',
+            };
             $data = array(
                 $value->id,
-                $value->created_at,
+                (string)$value->created_at,
                 $value->user->name . ' ' . $value->user->last_name,
-                $value->provider->provider_name,
+                optional($value->provider)->provider_name,
                 $value->number,
-                $value->txnid,
-                $value->opening_balance,
-                $value->amount,
-                $value->profit,
-                $value->total_balance,
+                number_format((float)$value->opening_balance, 2, '.', ''),
+                number_format((float)$value->amount, 2, '.', ''),
+                number_format((float)$value->profit, 2, '.', ''),
+                number_format((float)$value->total_balance, 2, '.', ''),
+                optional($value->status)->status,
                 $value->mode,
-                $value->ip_address,
-                ($value->wallet_type == 1) ? 'Payout' : 'Payin',
-                $value->status->status,
                 $vendor,
+                $value->txnid,
+                $this->resolveFailureReason($value),
+                $wallet_type,
+                $value->client_id,
             );
             array_push($arr, $data);
         }
         $delimiter = ",";
         [, $filepath, $path] = $this->prepareDownloadTarget('all-transaction-report' . $user_id . '_' . mt_rand(10, 99) . '.csv');
         $fp = fopen($filepath, 'w+');
-        $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Platform Fee', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Status', 'Vendor'];
+        $col = [
+            'Report ID',
+            'Date',
+            'User Name',
+            'Provider Name',
+            'Number',
+            'Opening Balance',
+            'Amount',
+            'Platform Fee',
+            'Closing Balance',
+            'Status',
+            'Mode',
+            'Vendor',
+            'UTR',
+            'Failure Reason',
+            'Wallet',
+            'Client Id',
+        ];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
         }
         fclose($fp);
         return Response()->json(['status' => 'success', 'message' => 'success', 'download_link' => $path]);
+    }
+
+    private function resolveFailureReason(Report $report): string
+    {
+        $reason = trim((string)$report->reason);
+        if ($reason !== '') {
+            return $reason;
+        }
+
+        if (in_array((int)$report->status_id, [1, 6], true)) {
+            return '';
+        }
+
+        if ((int)$report->status_id === 3) {
+            return RojgaarPeLibrary::pendingDisplayReason((int)$report->wallet_type);
+        }
+
+        $txnid = trim((string)$report->txnid);
+        if (in_array((int)$report->status_id, [2, 5], true)) {
+            if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
+                return $txnid;
+            }
+        }
+
+        $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
+        if (!$latestApi) {
+            $gatewayOrder = Gatewayorder::where('report_id', $report->id)
+                ->orWhere('id', $report->payid)
+                ->orWhere('client_id', $report->client_id)
+                ->orderBy('id', 'DESC')
+                ->first();
+            if ($gatewayOrder) {
+                $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
+            }
+        }
+
+        if ($latestApi) {
+            $apiMessage = trim(RojgaarPeLibrary::prettifyApiLogMessage($latestApi->message));
+            $responseType = (string)($latestApi->response_type ?? '');
+            if ($apiMessage !== '' && !RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType)) {
+                return $apiMessage;
+            }
+        }
+
+        return '';
     }
 
     function DownloadPendingReport($fromdate, $todate)
@@ -830,6 +901,23 @@ class DownloadController extends Controller
         File::cleanDirectory($destinationPath);
     }
 
+    function serve_file(string $filename)
+    {
+        $filename = basename($filename);
+        if (!preg_match('/^[A-Za-z0-9_\-\.]+\.csv$/', $filename)) {
+            abort(404);
+        }
+
+        $path = public_path('download/' . $filename);
+        if (!File::exists($path)) {
+            abort(404);
+        }
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
     private function prepareDownloadTarget(string $name): array
     {
         $destinationPath = public_path('download');
@@ -837,10 +925,11 @@ class DownloadController extends Controller
             File::makeDirectory($destinationPath, 0755, true);
         }
 
-        $filename = 'download/' . $name;
-        $filepath = public_path($filename);
-        $url = url($filename);
+        $safeName = basename($name);
+        $relative = 'download/' . $safeName;
+        $filepath = public_path($relative);
+        $url = url('admin/download/v1/serve/' . rawurlencode($safeName));
 
-        return [$filename, $filepath, $url];
+        return [$relative, $filepath, $url];
     }
 }

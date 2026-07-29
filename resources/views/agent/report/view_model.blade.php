@@ -108,6 +108,9 @@
         var fromdate = $("#fromdate").val();
         var todate = $("#todate").val();
         var optional1 = $("#download_optional1").val();
+        if (optional1 === undefined || optional1 === null || optional1 === '' || optional1 === 'undefined') {
+            optional1 = $("#other_id").val() || $("#status_id").val() || 0;
+        }
         var dataString = 'menu_name=' + download_menu_name + '&password=' + download_password + '&fromdate=' + fromdate + '&todate=' + todate + '&optional1=' + optional1 + '&_token=' + token;
         $.ajax({
             type: "POST",
@@ -117,8 +120,8 @@
                 $("#download_btn").show();
                 $("#download_btn_loader").hide();
                 if (msg.status == 'success') {
-                    $("#download-label").show();
-                    $("#download_link").attr('href', msg.download_link);
+                    window.location.href = msg.download_link;
+                    $("#transaction_download_model").modal('hide');
                 } else if(msg.status == 'validation_error'){
                     $("#download_menu_name_errors").text(msg.errors.menu_name);
                     $("#download_password_errors").text(msg.errors.password);
@@ -424,9 +427,6 @@
 
                 </div>
 
-                <div class="alert alert-outline-danger" role="alert" id="download-label" style="display: none;">
-                    <strong> Download File :  <a href="" target="_blank" id="download_link">Click Here</a> </strong>
-                </div>
             </div>
 
             <div class="modal-footer">

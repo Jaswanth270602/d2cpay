@@ -113,8 +113,8 @@
                 $("#download_btn").show();
                 $("#download_btn_loader").hide();
                 if (msg.status == 'success') {
-                    $("#download-label").show();
-                    $("#download_link").attr('href', msg.download_link);
+                    window.location.href = msg.download_link;
+                    $("#member_download_model").modal('hide');
                 } else if(msg.status == 'validation_error'){
                     $("#download_menu_name_errors").text(msg.errors.menu_name);
                     $("#download_password_errors").text(msg.errors.password);
@@ -514,9 +514,6 @@
 
                 </div>
 
-                <div class="alert alert-outline-danger" role="alert" id="download-label" style="display: none;">
-                    <strong> Download File :  <a href="" target="_blank" id="download_link">Click Here</a> </strong>
-                </div>
             </div>
 
             <div class="modal-footer">

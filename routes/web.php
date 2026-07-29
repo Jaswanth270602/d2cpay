@@ -342,6 +342,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/member-download', [App\Http\Controllers\Admin\DownloadController::class, 'member_download']);
             Route::post('/payment-request-view', [App\Http\Controllers\Admin\DownloadController::class, 'payment_request_view']);
             Route::post('/agent-onboarding-download', [App\Http\Controllers\Admin\DownloadController::class, 'agent_onboarding_download']);
+            Route::get('/serve/{filename}', [App\Http\Controllers\Admin\DownloadController::class, 'serve_file'])->where('filename', '[A-Za-z0-9_\-\.]+');
         });
 
         Route::group(['prefix' => 'send-mail', 'middleware' => 'auth'], function () {
@@ -702,6 +703,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::group(['prefix' => 'download/v1', 'middleware' => 'auth'], function () {
             Route::post('/file-download', [App\Http\Controllers\Agent\DownloadController::class, 'download_file']);
+            Route::get('/serve/{filename}', [App\Http\Controllers\Agent\DownloadController::class, 'serve_file'])->where('filename', '[A-Za-z0-9_\-\.]+');
         });
 
         Route::group(['prefix' => 'gst', 'middleware' => 'auth'], function () {
