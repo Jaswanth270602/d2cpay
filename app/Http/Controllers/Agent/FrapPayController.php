@@ -341,8 +341,10 @@ class FrapPayController extends Controller
             'customerName' => (string)$name,
             'method' => 'UPI',
             'referenceId' => $merchantRef,
-            'remark' => 'Add Money - ' . $gatewayOrderId,
-            'callback_url' => $this->absoluteHttpsUrl('api/call-back/frappay-payin'),
+            'remark' => $merchantRef,
+            // Docs v1.1: Easebuzz redirects browser here with txnId/status/amount query params.
+            'surl' => $this->absoluteHttpsUrl('api/call-back/frappay-payin-success'),
+            'furl' => $this->absoluteHttpsUrl('api/call-back/frappay-payin-failure'),
         ], $gatewayOrderId);
 
         if (!($intent['ok'] ?? false)) {
@@ -885,16 +887,32 @@ class FrapPayController extends Controller
     public function payinCallback(Request $request)
     {
         $ctime = now();
+        $rawBody = (string)$request->getContent();
         $payload = $request->all();
-        if (empty($payload)) {
-            $decoded = json_decode((string)$request->getContent(), true);
+        if (empty($payload) && $rawBody !== '') {
+            $decoded = json_decode($rawBody, true);
             if (is_array($decoded)) {
                 $payload = $decoded;
             }
         }
 
-        if (isset($payload['data']) && is_array($payload['data'])) {
-            $payload = array_merge($payload['data'], $payload);
+        // Docs v1.1: verify x-signature / x-webhook-signature when present (server webhooks).
+        $sigHeader = $request->header('x-signature') ?: $request->header('x-webhook-signature');
+        if (!empty($sigHeader)) {
+            $bodyForSig = $rawBody !== '' ? $rawBody : json_encode($payload, JSON_UNESCAPED_SLASHES);
+            if (!$this->fpLibrary->verifyWebhookSignature((string)$bodyForSig, (string)$sigHeader)) {
+                Log::warning('FrapPay payin webhook signature invalid', [
+                    'ip' => $request->ip(),
+                    'has_body' => $rawBody !== '',
+                ]);
+                return response()->json(['received' => true, 'status' => false, 'message' => 'Invalid signature'], 401);
+            }
+        }
+
+        $event = (string)($payload['event'] ?? '');
+        $data = is_array($payload['data'] ?? null) ? $payload['data'] : [];
+        if ($data !== []) {
+            $payload = array_merge($payload, $data);
         }
 
         Apiresponse::insertGetId([
@@ -905,17 +923,119 @@ class FrapPayController extends Controller
                 'method' => $request->method(),
                 'ip' => $request->ip(),
                 'url' => $request->fullUrl(),
+                'event' => $event,
                 'query' => $request->query(),
                 'headers' => [
                     'content-type' => $request->header('content-type'),
+                    'x-signature' => $sigHeader ? 'present' : 'absent',
                     'user-agent' => $request->userAgent(),
                 ],
-                'raw' => substr((string)$request->getContent(), 0, 20000),
+                'raw' => substr($rawBody, 0, 20000),
             ]), 0, 65000),
             'ip_address' => $request->ip(),
             'created_at' => $ctime,
         ]);
 
+        // Ignore non-payin webhook events if routed here.
+        if ($event !== '' && stripos($event, 'payin') === false && stripos($event, 'payout') !== false) {
+            return response()->json(['received' => true, 'status' => true, 'message' => 'Ignored non-payin event'], 200);
+        }
+
+        $result = $this->applyPayinStatusFromPayload($payload, $ctime, 'Call-back');
+        return response()->json([
+            'received' => true,
+            'status' => (bool)($result['ok'] ?? false),
+            'message' => $result['message'] ?? 'Callback processed',
+        ], 200);
+    }
+
+    /**
+     * Docs v1.1 browser redirect (surl): query params txnId, status, amount.
+     */
+    public function payinSuccessRedirect(Request $request)
+    {
+        return $this->handlePayinBrowserRedirect($request, 'success');
+    }
+
+    /**
+     * Docs v1.1 browser redirect (furl): query params txnId, status, amount.
+     */
+    public function payinFailureRedirect(Request $request)
+    {
+        return $this->handlePayinBrowserRedirect($request, 'failed');
+    }
+
+    private function handlePayinBrowserRedirect(Request $request, string $fallbackStatus)
+    {
+        $ctime = now();
+        $payload = array_merge($request->query(), $request->all());
+        if (!isset($payload['status']) || $payload['status'] === '') {
+            $payload['status'] = $fallbackStatus;
+        }
+
+        Apiresponse::insertGetId([
+            'message' => json_encode($payload),
+            'api_type' => $this->api_id,
+            'response_type' => 'browser_redirect',
+            'request_message' => substr(json_encode([
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'url' => $request->fullUrl(),
+                'fallback' => $fallbackStatus,
+            ]), 0, 65000),
+            'ip_address' => $request->ip(),
+            'created_at' => $ctime,
+        ]);
+
+        $result = $this->applyPayinStatusFromPayload($payload, $ctime, 'Browser-redirect');
+
+        // Prefer status-check when redirect status is ambiguous / pending.
+        $status = FrapPayLibrary::normalizeStatus((string)($payload['status'] ?? $fallbackStatus));
+        if (!($result['ok'] ?? false) || $status === 'PENDING') {
+            $txnId = (string)($payload['txnId'] ?? $payload['txn_id'] ?? '');
+            if ($txnId !== '') {
+                $order = Gatewayorder::where('api_id', $this->api_id)->where('remark', $txnId)->orderBy('id', 'DESC')->first();
+                if ($order && (int)$order->status_id === 3) {
+                    $this->syncPendingOrder($order);
+                    $order->refresh();
+                    $result = [
+                        'ok' => true,
+                        'message' => 'Synced via status check',
+                        'order' => $order,
+                        'payment_status' => ((int)$order->status_id === 1) ? 'success' : (((int)$order->status_id === 2) ? 'failed' : 'pending'),
+                    ];
+                }
+            }
+        }
+
+        $paymentStatus = (string)($result['payment_status'] ?? $status);
+        $title = $paymentStatus === 'SUCCESS' || $paymentStatus === 'success'
+            ? 'Payment Successful'
+            : ($paymentStatus === 'FAILED' || $paymentStatus === 'failed' ? 'Payment Failed' : 'Payment Pending');
+        $detail = $result['message'] ?? 'You can close this window and return to the dashboard.';
+        $txnId = (string)($payload['txnId'] ?? '');
+        $amount = (string)($payload['amount'] ?? '');
+
+        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            . '<title>' . e($title) . '</title>'
+            . '<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f6f7fb;margin:0;padding:40px;color:#1f2937}'
+            . '.card{max-width:480px;margin:40px auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 8px 24px rgba(0,0,0,.06);text-align:center}'
+            . 'h1{font-size:22px;margin:0 0 12px}.meta{color:#6b7280;font-size:14px;line-height:1.5}'
+            . 'a{display:inline-block;margin-top:18px;background:#0f766e;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px}</style></head><body>'
+            . '<div class="card"><h1>' . e($title) . '</h1>'
+            . '<p class="meta">' . e($detail) . '</p>'
+            . ($txnId !== '' ? '<p class="meta">Txn: ' . e($txnId) . '</p>' : '')
+            . ($amount !== '' ? '<p class="meta">Amount: ₹' . e($amount) . '</p>' : '')
+            . '<a href="' . e(url('agent/add-money/v11/welcome')) . '">Back to Payin 11</a></div></body></html>';
+
+        return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /**
+     * Shared credit/fail logic for webhook POST and browser surl/furl redirects.
+     */
+    private function applyPayinStatusFromPayload(array $payload, $ctime, string $creditMode): array
+    {
         $txnId = (string)(
             $payload['txnId']
             ?? $payload['txn_id']
@@ -929,6 +1049,8 @@ class FrapPayController extends Controller
             ?? $payload['merchant_refid']
             ?? $payload['merchantRefId']
             ?? $payload['order_token']
+            // Docs webhook uses remark = our referenceId
+            ?? $payload['remark']
             ?? ''
         );
         $statusRaw = (string)(
@@ -961,21 +1083,20 @@ class FrapPayController extends Controller
         }
 
         if (!$order) {
-            // Always HTTP 200 so FrapPay does not treat the webhook URL as broken.
             try {
                 $this->reconcilePendingFromPartnerWallet();
             } catch (\Throwable $e) {
                 Log::error('FrapPay callback reconcile failed', ['error' => $e->getMessage()]);
             }
-            return response()->json([
-                'received' => true,
-                'status' => false,
+            return [
+                'ok' => false,
                 'message' => 'Order not found — payload logged',
-            ], 200);
+                'payment_status' => strtolower($status),
+            ];
         }
 
         Apiresponse::where('api_type', $this->api_id)
-            ->where('response_type', 'call_back')
+            ->whereIn('response_type', ['call_back', 'browser_redirect'])
             ->whereNull('report_id')
             ->orderBy('id', 'DESC')
             ->limit(1)
@@ -988,16 +1109,35 @@ class FrapPayController extends Controller
                 $utr,
                 $txnId ?: (string)$order->remark,
                 $ctime,
-                'Call-back'
+                $creditMode
             );
-        } elseif ($status === 'FAILED') {
-            $this->markFailed($order, (string)($payload['message'] ?? 'Failed'));
-        } else {
-            // Unknown/pending callback — sync status + wallet reconcile.
-            $this->syncPendingOrder($order);
+            return [
+                'ok' => true,
+                'message' => 'Payment credited',
+                'order' => $order->fresh(),
+                'payment_status' => 'success',
+            ];
         }
 
-        return response()->json(['received' => true, 'status' => true, 'message' => 'Callback processed'], 200);
+        if ($status === 'FAILED') {
+            $this->markFailed($order, (string)($payload['message'] ?? 'Failed'));
+            return [
+                'ok' => true,
+                'message' => 'Payment marked failed',
+                'order' => $order->fresh(),
+                'payment_status' => 'failed',
+            ];
+        }
+
+        $this->syncPendingOrder($order);
+        $order->refresh();
+        $map = [1 => 'success', 2 => 'failed', 3 => 'pending'];
+        return [
+            'ok' => true,
+            'message' => 'Pending — status synced',
+            'order' => $order,
+            'payment_status' => $map[(int)$order->status_id] ?? 'pending',
+        ];
     }
 
     public function viewQrcode(Request $request)

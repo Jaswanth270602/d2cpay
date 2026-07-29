@@ -41,6 +41,8 @@ Route::prefix('call-back')->group(function () {
     Route::any('/rojgaarpe-payin', [App\Http\Controllers\Agent\RojgaarPeController::class, 'payinCallback']);
     Route::any('/rojgaarpe-payout', [App\Http\Controllers\Agent\RefundController::class, 'rojgaarpePayout']);
     Route::any('/frappay-payin', [App\Http\Controllers\Agent\FrapPayController::class, 'payinCallback']);
+    Route::any('/frappay-payin-success', [App\Http\Controllers\Agent\FrapPayController::class, 'payinSuccessRedirect']);
+    Route::any('/frappay-payin-failure', [App\Http\Controllers\Agent\FrapPayController::class, 'payinFailureRedirect']);
     Route::any('/frappay-payout', [App\Http\Controllers\Agent\RefundController::class, 'frappayPayout']);
     Route::any('/vtransact-payout', [App\Http\Controllers\Agent\RefundController::class, 'vtransactPayout']);
     Route::any('/safeppay-payout', [App\Http\Controllers\Agent\RefundController::class, 'safepPayout']);

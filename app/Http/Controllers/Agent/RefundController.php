@@ -658,20 +658,32 @@ class RefundController extends Controller
     public function frappayPayout(Request $request)
     {
         $ctime = now();
+        $rawBody = (string)$request->getContent();
         $payload = $request->all();
-        if (empty($payload)) {
-            $decoded = json_decode((string)$request->getContent(), true);
+        if (empty($payload) && $rawBody !== '') {
+            $decoded = json_decode($rawBody, true);
             if (is_array($decoded)) {
                 $payload = $decoded;
             }
         }
+
+        $sigHeader = $request->header('x-signature') ?: $request->header('x-webhook-signature');
+        if (!empty($sigHeader)) {
+            $library = new FrapPayLibrary();
+            $bodyForSig = $rawBody !== '' ? $rawBody : json_encode($payload, JSON_UNESCAPED_SLASHES);
+            if (!$library->verifyWebhookSignature((string)$bodyForSig, (string)$sigHeader)) {
+                Log::warning('FrapPay payout webhook signature invalid', ['ip' => $request->ip()]);
+                return response()->json(['status' => false, 'message' => 'Invalid signature'], 401);
+            }
+        }
+
         $data = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
 
         Apiresponse::insertGetId([
             'message' => json_encode($payload),
             'api_type' => 18,
             'response_type' => 'call_back',
-            'request_message' => substr((string)$request->getContent(), 0, 65000),
+            'request_message' => substr($rawBody !== '' ? $rawBody : json_encode($payload), 0, 65000),
             'ip_address' => $request->ip(),
             'created_at' => $ctime,
         ]);
@@ -687,7 +699,14 @@ class RefundController extends Controller
 
         $utr = (string)($data['utr'] ?? $data['providerTxnId'] ?? $payload['utr'] ?? '');
         $txnId = (string)($data['txnId'] ?? $data['txn_id'] ?? $payload['txnId'] ?? '');
-        $referenceId = (string)($data['referenceId'] ?? $data['reference_id'] ?? $payload['referenceId'] ?? '');
+        $referenceId = (string)(
+            $data['referenceId']
+            ?? $data['reference_id']
+            ?? $payload['referenceId']
+            ?? $data['remark']
+            ?? $payload['remark']
+            ?? ''
+        );
         $amount = (float)($data['amount'] ?? $payload['amount'] ?? 0);
 
         $report = null;

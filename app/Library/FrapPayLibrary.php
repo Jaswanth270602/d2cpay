@@ -342,11 +342,39 @@ namespace App\library {
             ];
         }
 
+        /**
+         * Docs v1.1 webhook: HMAC-SHA256(secret, rawBody) compared to x-signature (sha256=...).
+         */
+        public function verifyWebhookSignature(string $rawBody, ?string $signatureHeader): bool
+        {
+            if ($this->secretKey === '') {
+                return false;
+            }
+
+            $provided = trim((string)$signatureHeader);
+            if ($provided === '') {
+                return false;
+            }
+            $provided = preg_replace('/^sha256=/i', '', $provided);
+
+            $expected = hash_hmac('sha256', $rawBody, $this->secretKey);
+            if ($expected === '' || $provided === '') {
+                return false;
+            }
+
+            return hash_equals($expected, $provided);
+        }
+
         public function createPayin(array $params, ?int $gatewayOrderId = null): array
         {
-            $callbackUrl = trim((string)($params['callback_url'] ?? $params['callbackUrl'] ?? ''));
-            if ($callbackUrl === '') {
-                $callbackUrl = self::publicUrl('api/call-back/frappay-payin');
+            // Docs v1.1: browser redirects use surl/furl. Server webhooks are configured in dashboard.
+            $surl = trim((string)($params['surl'] ?? $params['success_url'] ?? ''));
+            $furl = trim((string)($params['furl'] ?? $params['failure_url'] ?? ''));
+            if ($surl === '') {
+                $surl = self::publicUrl('api/call-back/frappay-payin-success');
+            }
+            if ($furl === '') {
+                $furl = self::publicUrl('api/call-back/frappay-payin-failure');
             }
 
             $payload = [
@@ -355,17 +383,15 @@ namespace App\library {
                 'method' => (string)($params['method'] ?? 'UPI'),
                 'referenceId' => (string)($params['referenceId'] ?? ''),
                 'remark' => (string)($params['remark'] ?? ($params['referenceId'] ?? 'Add Money')),
-                // FrapPay dashboard also has global webhook URLs; send per-order too if supported.
-                'callbackUrl' => $callbackUrl,
-                'callback_url' => $callbackUrl,
-                'webhookUrl' => $callbackUrl,
-                'notifyUrl' => $callbackUrl,
+                'surl' => $surl,
+                'furl' => $furl,
             ];
 
             $result = $this->request('POST', 'payin', $payload, true, $gatewayOrderId, 'payin_create');
             $json = $result['json'];
             $data = is_array($json['data'] ?? null) ? $json['data'] : [];
 
+            // Docs: payin create returns HTTP 201 with success:true
             if (!($result['ok'] ?? false)) {
                 return [
                     'ok' => false,
@@ -385,7 +411,8 @@ namespace App\library {
                 ?? $data['payment_url']
                 ?? ''
             );
-            $accessKey = (string)($data['access_key'] ?? $data['accessKey'] ?? '');
+            // Form-submission docs still require access_key from initiate response (production).
+            $accessKey = (string)($data['access_key'] ?? $data['accessKey'] ?? $data['accesskey'] ?? '');
             $environment = (string)($data['environment'] ?? ($this->isUatEnvironment() ? 'uat' : 'production'));
 
             // Do NOT fetch Easebuzz QR here — it can timeout and break create-order.
@@ -400,6 +427,8 @@ namespace App\library {
                 'qr_link' => $qrLink,
                 'access_key' => $accessKey,
                 'environment' => $environment,
+                'surl' => $surl,
+                'furl' => $furl,
                 'uat_simulated' => self::isUatSimulatedPayin([
                     'environment' => $environment,
                     'message' => (string)($json['message'] ?? ''),

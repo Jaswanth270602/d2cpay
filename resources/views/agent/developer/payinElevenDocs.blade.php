@@ -332,7 +332,7 @@ $expected = hash_hmac('sha256', $signatureString, YOUR_API_TOKEN);
 <pre>Sample callback URL (GET) :
 https://your-domain.com/frappay/callback?status=credit&amp;client_id=PAYIN11_PROD_20260725120000&amp;amount=500&amp;utr=txn_abc123&amp;txnid=1301&amp;signature=abc123...</pre>
                         <hr>
-                        <p class="mb-0"><small><strong>Note:</strong> Use the <code>callback_url</code> you pass in create order. FrapPay webhook endpoint (<code>{{ url('api/call-back/frappay-payin') }}</code>) is handled internally. If FrapPay status API lags behind their dashboard, d2cpay also auto-credits by reconciling the partner <strong>payin wallet balance</strong> (cron / status poll). Prefer configuring both dashboard webhooks and status enquiry.</small></p>
+                        <p class="mb-0"><small><strong>Note:</strong> Use the <code>callback_url</code> you pass in create order (merchant notification). Internally, FrapPay docs v1.1 uses <code>surl</code>/<code>furl</code> browser redirects (<code>{{ url('api/call-back/frappay-payin-success') }}</code> / <code>{{ url('api/call-back/frappay-payin-failure') }}</code>) and a dashboard Transaction Webhook (<code>{{ url('api/call-back/frappay-payin') }}</code>, HMAC <code>x-signature</code>). If status API lags, d2cpay also auto-credits via partner payin wallet reconcile.</small></p>
                     </div>
                 </div>
 
