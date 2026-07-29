@@ -106,12 +106,30 @@ class ReportController extends Controller
 
     function all_transaction_report_api(Request $request)
     {
-        $fromdate = $request->get('fromdate');
-        $todate = $request->get('amp;todate');
-        $child_id = $request->get('amp;child_id');
-        $status_id = $request->get('amp;status_id');
-        $provider_id = $request->get('amp;provider_id');
-        $api_id = $request->get('amp;api_id');
+        $fromdate = $request->get('fromdate') ?: $request->get('amp;fromdate');
+        $todate = $request->get('todate') ?: $request->get('amp;todate');
+        $child_id = $request->get('child_id');
+        if ($child_id === null || $child_id === '') {
+            $child_id = $request->get('amp;child_id');
+        }
+        $status_id = $request->get('status_id');
+        if ($status_id === null || $status_id === '') {
+            $status_id = $request->get('amp;status_id');
+        }
+        $provider_id = $request->get('provider_id');
+        if ($provider_id === null || $provider_id === '') {
+            $provider_id = $request->get('amp;provider_id');
+        }
+        $api_id = $request->get('api_id');
+        if ($api_id === null || $api_id === '') {
+            $api_id = $request->get('amp;api_id');
+        }
+        if (empty($fromdate)) {
+            $fromdate = date('Y-m-d');
+        }
+        if (empty($todate)) {
+            $todate = date('Y-m-d');
+        }
         $draw = $request->get('draw');
         $start = $request->get("start");
         $rowperpage = $request->get("length"); // Rows display per page

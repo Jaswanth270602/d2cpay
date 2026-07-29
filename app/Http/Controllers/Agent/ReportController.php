@@ -49,9 +49,18 @@ class ReportController extends Controller
 
     function all_transaction_report_api(Request $request)
     {
-        $fromdate = $request->get('fromdate');
-        $todate = $request->get('amp;todate');
-        $status_id = $request->get('amp;status_id');
+        $fromdate = $request->get('fromdate') ?: $request->get('amp;fromdate');
+        $todate = $request->get('todate') ?: $request->get('amp;todate');
+        $status_id = $request->get('status_id');
+        if ($status_id === null || $status_id === '') {
+            $status_id = $request->get('amp;status_id');
+        }
+        if (empty($fromdate)) {
+            $fromdate = date('Y-m-d');
+        }
+        if (empty($todate)) {
+            $todate = date('Y-m-d');
+        }
 
         $draw = $request->get('draw');
         $start = $request->get("start");

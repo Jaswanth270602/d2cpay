@@ -72,10 +72,12 @@
                                     <th class="wd-15p border-bottom-0">Date Time</th>
                                     <th class="wd-15p border-bottom-0">User Name</th>
                                     <th class="wd-15p border-bottom-0">Provider Name</th>
+                                    <th class="wd-15p border-bottom-0">Vendor</th>
                                     <th class="wd-15p border-bottom-0">Number</th>
                                     <th class="wd-15p border-bottom-0">Txnid</th>
                                     <th class="wd-15p border-bottom-0">Amount</th>
                                     <th class="wd-15p border-bottom-0">Charge</th>
+                                    <th class="wd-15p border-bottom-0">Failure Reason</th>
                                     <th class="wd-15p border-bottom-0">Status</th>
                                     <th class="wd-15p border-bottom-0">Action</th>
 
@@ -95,10 +97,12 @@
                                             { data: 'created_at' },
                                             { data: 'user' },
                                             { data: 'provider' },
+                                            { data: 'vendor' },
                                             { data: 'number' },
                                             { data: 'txnid' },
                                             { data: 'amount' },
                                             { data: 'profit' },
+                                            { data: 'reason' },
                                             { data: 'status' },
                                             { data: 'view' },
                                         ]

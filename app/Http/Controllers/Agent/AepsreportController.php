@@ -252,8 +252,14 @@ class AepsreportController extends Controller
 
     function payout_settlement_report_api(Request $request)
     {
-        $fromdate = $request->get('fromdate');
-        $todate = $request->get('amp;todate');
+        $fromdate = $request->get('fromdate') ?: $request->get('amp;fromdate');
+        $todate = $request->get('todate') ?: $request->get('amp;todate');
+        if (empty($fromdate)) {
+            $fromdate = date('Y-m-d');
+        }
+        if (empty($todate)) {
+            $todate = date('Y-m-d');
+        }
 
         $draw = $request->get('draw');
         $start = $request->get("start");
@@ -271,12 +277,13 @@ class AepsreportController extends Controller
 
         $user_id = Auth::id();
         $providers = Provider::whereIn('id', [323, 324])->get(['id']);
+        // Bank payouts (provider 324) are stored with wallet_type = 1 (Payout wallet).
+        // AEPS settlement moves (323) may use wallet_type = 2. Do not force wallet_type = 2 only.
         $totalRecords = Report::select('count(*) as allcount')
             ->where('user_id', $user_id)
             ->whereDate('created_at', '>=', $fromdate)
             ->whereDate('created_at', '<=', $todate)
             ->whereIn('provider_id', $providers)
-            ->where('wallet_type', 2)
             ->count();
 
         $totalRecordswithFilter = Report::select('count(*) as allcount')
@@ -285,36 +292,35 @@ class AepsreportController extends Controller
             ->whereDate('created_at', '<=', $todate)
             ->where('number', 'like', '%' . $searchValue . '%')
             ->whereIn('provider_id', $providers)
-            ->where('wallet_type', 2)
             ->count();
 
         // Fetch records
 
         $records = Report::orderBy($columnName, $columnSortOrder)
-            ->select('id', 'created_at', 'provider_id', 'number', 'txnid', 'amount', 'profit', 'status_id')
+            ->select('id', 'created_at', 'provider_id', 'api_id', 'number', 'txnid', 'amount', 'profit', 'status_id', 'reason', 'wallet_type')
             ->where('number', 'like', '%' . $searchValue . '%')
             ->where('user_id', $user_id)
             ->whereDate('created_at', '>=', $fromdate)
             ->whereDate('created_at', '<=', $todate)
             ->whereIn('provider_id', $providers)
-            ->where('wallet_type', 2)
             ->orderBy('id', 'DESC')
             ->skip($start)
             ->take($rowperpage)
             ->get();
         $data_arr = array();
         foreach ($records as $value) {
-
-
+            $apiName = optional($value->api)->api_name ?? '';
             $data_arr[] = array(
                 "id" => $value->id,
                 "created_at" => "$value->created_at",
-                "provider" => $value->provider->provider_name,
+                "provider" => optional($value->provider)->provider_name,
+                "vendor" => $apiName,
                 "number" => $value->number,
                 "txnid" => $value->txnid,
                 "amount" => number_format($value->amount, 2),
                 "profit" => number_format($value->profit, 2),
-                "status" => '<span class="' . $value->status->class . '">' . $value->status->status . '</span>',
+                "reason" => $value->reason ?? '',
+                "status" => '<span class="' . optional($value->status)->class . '">' . optional($value->status)->status . '</span>',
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges(' . $value->id . ')"><i class="fas fa-eye"></i> View</button>',
             );
         }

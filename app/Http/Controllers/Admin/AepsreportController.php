@@ -177,8 +177,14 @@ class AepsreportController extends Controller
     }
 
     function payout_settlement_api (Request $request){
-        $fromdate = $request->get('fromdate');
-        $todate =  $request->get('amp;todate');
+        $fromdate = $request->get('fromdate') ?: $request->get('amp;fromdate');
+        $todate = $request->get('todate') ?: $request->get('amp;todate');
+        if (empty($fromdate)) {
+            $fromdate = date('Y-m-d');
+        }
+        if (empty($todate)) {
+            $todate = date('Y-m-d');
+        }
 
         $draw = $request->get('draw');
         $start = $request->get("start");
@@ -232,16 +238,19 @@ class AepsreportController extends Controller
         $data_arr = array();
         foreach($records as $value){
             $statement_url = url('admin/user-ledger-report').'/'.Crypt::encrypt($value->user_id);
+            $apiName = optional($value->api)->api_name ?? '';
             $data_arr[] = array(
                 "id" => $value->id,
                 "created_at" => "$value->created_at",
                 "user" => '<a href="'.$statement_url.'">'.$value->user->name . ' '. $value->user->last_name.'</a>',
-                "provider" => $value->provider->provider_name,
+                "provider" => optional($value->provider)->provider_name,
+                "vendor" => $apiName,
                 "number" => $value->number,
                 "txnid" => $value->txnid,
                 "amount" => number_format($value->amount,2),
                 "profit" => number_format($value->profit,2),
-                "status" => '<span class="'. $value->status->class.'">'. $value->status->status.'</span>',
+                "reason" => $value->reason ?? '',
+                "status" => '<span class="'. optional($value->status)->class.'">'. optional($value->status)->status.'</span>',
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges('.$value->id .')"><i class="fas fa-eye"></i> View</button>',
             );
         }
