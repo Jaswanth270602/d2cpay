@@ -684,6 +684,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payin-nine-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinNineDocs']);
             Route::get('/payin-ten-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinTenDocs']);
             Route::get('/payin-eleven-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinElevenDocs']);
+            Route::get('/payin-twelve-docs', [App\Http\Controllers\Agent\DeveloperController::class, 'payinTwelveDocs']);
 
         });
 
@@ -827,6 +828,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/fetch-qr', [App\Http\Controllers\Agent\FrapPayController::class, 'fetchQr']);
             Route::get('/checkout/{id}', [App\Http\Controllers\Agent\FrapPayController::class, 'checkout']);
             Route::get('/view-qrcode', [App\Http\Controllers\Agent\FrapPayController::class, 'viewQrcode']);
+        });
+
+        Route::group(['prefix' => 'add-money/v12', 'middleware' => 'auth'], function () {
+            Route::get('/welcome', [App\Http\Controllers\Agent\AurexaPayController::class, 'welcome']);
+            Route::post('/create-order', [App\Http\Controllers\Agent\AurexaPayController::class, 'createOrderWeb']);
+            Route::post('/order-status', [App\Http\Controllers\Agent\AurexaPayController::class, 'webOrderStatus']);
+            Route::get('/view-qrcode', [App\Http\Controllers\Agent\AurexaPayController::class, 'viewQrcode']);
         });
 
 

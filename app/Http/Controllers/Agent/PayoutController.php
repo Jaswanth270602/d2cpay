@@ -37,6 +37,7 @@ use App\Library\ZigPayLibrary;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
+use App\Library\AurexaPayLibrary;
 use App\Library\LockHoldPayoutLibrary;
 use DB;
 
@@ -750,6 +751,9 @@ class PayoutController extends Controller
         }elseif ($api_id == 18){
             $library = new FrapPayLibrary();
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
+        }elseif ($api_id == 19){
+            $library = new AurexaPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, 2, $bank_name);
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];
     }

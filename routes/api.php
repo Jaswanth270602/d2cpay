@@ -44,6 +44,8 @@ Route::prefix('call-back')->group(function () {
     Route::any('/frappay-payin-success', [App\Http\Controllers\Agent\FrapPayController::class, 'payinSuccessRedirect']);
     Route::any('/frappay-payin-failure', [App\Http\Controllers\Agent\FrapPayController::class, 'payinFailureRedirect']);
     Route::any('/frappay-payout', [App\Http\Controllers\Agent\RefundController::class, 'frappayPayout']);
+    Route::any('/aurexapay-payin', [App\Http\Controllers\Agent\AurexaPayController::class, 'payinCallback']);
+    Route::any('/aurexapay-payout', [App\Http\Controllers\Agent\RefundController::class, 'aurexapayPayout']);
     Route::any('/vtransact-payout', [App\Http\Controllers\Agent\RefundController::class, 'vtransactPayout']);
     Route::any('/safeppay-payout', [App\Http\Controllers\Agent\RefundController::class, 'safepPayout']);
 });
@@ -287,6 +289,11 @@ Route::prefix('add-money/v10')->group(function () {
 Route::prefix('add-money/v11')->group(function () {
     Route::post('/createOrder', [App\Http\Controllers\Agent\FrapPayController::class, 'createOrderApi'])->middleware('auth:api');
     Route::post('/status-enquiry', [App\Http\Controllers\Agent\FrapPayController::class, 'statusEnquiryApi'])->middleware('auth:api');
+});
+
+Route::prefix('add-money/v12')->group(function () {
+    Route::post('/createOrder', [App\Http\Controllers\Agent\AurexaPayController::class, 'createOrderApi'])->middleware('auth:api');
+    Route::post('/status-enquiry', [App\Http\Controllers\Agent\AurexaPayController::class, 'statusEnquiryApi'])->middleware('auth:api');
 });
 
 

@@ -41,6 +41,7 @@ use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\LockHoldPayoutLibrary;
 use App\Library\FrapPayLibrary;
+use App\Library\AurexaPayLibrary;
 use App\Imports\BulkUpload;
 use App\Exports\BulkPayoutTemplateExport;
 
@@ -918,6 +919,10 @@ class DirectTransferController extends Controller
         if ($api_id == 18) {
             $library = new FrapPayLibrary();
             return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id);
+        }
+        if ($api_id == 19) {
+            $library = new AurexaPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $beneficiary_name, $account_number, $ifsc_code, $insert_id, $channel_id, $bank_name);
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];
     }

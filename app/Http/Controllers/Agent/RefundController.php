@@ -27,6 +27,7 @@ use Helpers;
 use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
+use App\Library\AurexaPayLibrary;
 use Illuminate\Support\Facades\Log;
 
 
@@ -791,6 +792,99 @@ class RefundController extends Controller
                     Log::error('FrapPay payout callback forward failed', ['error' => $e->getMessage(), 'report_id' => $report->id]);
                 }
             }
+        }
+
+        return response()->json([
+            'received' => true,
+            'status' => true,
+            'message' => 'Callback processed successfully',
+            'report_id' => $report->id,
+        ]);
+    }
+
+    public function aurexapayPayout(Request $request)
+    {
+        $ctime = now();
+        $rawBody = (string)$request->getContent();
+        $payload = $request->all();
+        if (empty($payload) && $rawBody !== '') {
+            $decoded = json_decode($rawBody, true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+        if (isset($payload['data']) && is_array($payload['data'])) {
+            $payload = array_merge($payload, $payload['data']);
+        }
+
+        Apiresponse::insertGetId([
+            'message' => json_encode($payload),
+            'api_type' => 19,
+            'response_type' => 'call_back',
+            'request_message' => substr($rawBody !== '' ? $rawBody : json_encode($payload), 0, 65000),
+            'ip_address' => $request->ip(),
+            'created_at' => $ctime,
+        ]);
+
+        $status = AurexaPayLibrary::normalizeStatus((string)($payload['status'] ?? $payload['payment_status'] ?? ''));
+        if ($status === 'SUCCESS') {
+            $statusId = 1;
+        } elseif ($status === 'FAILED') {
+            $statusId = 2;
+        } else {
+            $statusId = 3;
+        }
+
+        $utr = (string)($payload['utr'] ?? $payload['UTR'] ?? '');
+        $txnId = (string)($payload['id'] ?? $payload['txnId'] ?? $payload['txn_id'] ?? '');
+        $referenceId = (string)($payload['reference'] ?? $payload['referenceId'] ?? $payload['merchant_refid'] ?? '');
+        $amount = (float)($payload['amount'] ?? 0);
+
+        $report = null;
+        if ($referenceId !== '') {
+            $report = Report::where('payid', $referenceId)->where('api_id', 19)->orderBy('id', 'DESC')->first();
+        }
+        if (!$report && $txnId !== '') {
+            $report = Report::where('api_id', 19)
+                ->where(function ($q) use ($txnId) {
+                    $q->where('txnid', $txnId)->orWhere('payid', $txnId);
+                })
+                ->orderBy('id', 'DESC')
+                ->first();
+        }
+
+        if (!$report) {
+            Log::warning('AurexaPay payout callback report not found', [
+                'referenceId' => $referenceId,
+                'txnId' => $txnId,
+            ]);
+            return response()->json(['status' => false, 'message' => 'Report not found'], 404);
+        }
+
+        Apiresponse::where('api_type', 19)
+            ->where('response_type', 'call_back')
+            ->whereNull('report_id')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->update(['report_id' => $report->id]);
+
+        if ($referenceId !== '' && (string)$report->payid !== $referenceId) {
+            Report::where('id', $report->id)->update(['payid' => $referenceId]);
+            $report->refresh();
+        }
+
+        $mode = 'Call-back';
+        $refundLibrary = new RefundLibrary();
+        $txnUpdateValue = $utr !== '' ? $utr : ($txnId !== '' ? $txnId : (string)($payload['message'] ?? ''));
+        if ($report->wallet_type == 1) {
+            $refundLibrary->update_transaction($statusId, $txnUpdateValue, $report->id, $mode);
+        } elseif ($report->wallet_type == 2) {
+            $refundLibrary->update_transaction_aeps($statusId, $txnUpdateValue, $report->id, $mode);
+        } else {
+            Report::where('id', $report->id)->where('status_id', 3)->update([
+                'status_id' => $statusId,
+                'txnid' => $txnUpdateValue,
+            ]);
         }
 
         return response()->json([
