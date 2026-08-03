@@ -12,6 +12,8 @@ use App\Library\BasicLibrary;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\Provider;
+use App\Models\Api;
+use App\Models\Banktransferswitching;
 use App\Models\Traceurl;
 use Validator;
 use App\Models\Sitesetting;
@@ -19,6 +21,9 @@ use Helpers;
 use Hash;
 use Str;
 use App\Models\Agentonboarding;
+use App\Library\AurexaPayLibrary;
+use App\Library\RojgaarPeLibrary;
+use App\Library\FrapPayLibrary;
 
 class DeveloperController extends Controller
 {
@@ -435,11 +440,117 @@ class DeveloperController extends Controller
     function payoutDocs(Request $request)
     {
         if (Auth::User()->role_id == 10) {
-            $data = array('page_title' => 'Payout Document');
+            $gateway = $this->resolvePayoutDocsGateway((int)Auth::id());
+            $data = array_merge(['page_title' => 'Payout Document'], $gateway);
             return view('agent.developer.payoutDocs')->with($data);
         } else {
             return redirect()->back();
         }
+    }
+
+    /**
+     * Resolve merchant-facing payout gateway docs from company route + bank switching override.
+     */
+    private function resolvePayoutDocsGateway(int $userId): array
+    {
+        $user = User::with('company')->find($userId);
+        $apiId = (int)($user->company->payout_route ?? 0);
+
+        $switching = Banktransferswitching::where('user_id', $userId)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$switching) {
+            $switching = Banktransferswitching::where(function ($query) {
+                $query->where('user_id', 0)->orWhereNull('user_id');
+            })
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if ($switching && !empty($switching->api_id)) {
+            $apiId = (int)$switching->api_id;
+        }
+
+        $catalog = [
+            16 => [
+                'gateway_label' => 'Payin 9 (Quick Pay Cash)',
+                'gateway_short' => 'Payin 9',
+                'min_amount' => 1,
+                'max_amount' => 100000,
+                'provider_callback_path' => 'api/call-back/qpc-payout',
+            ],
+            17 => [
+                'gateway_label' => 'Payin 10 (RojgaarPe)',
+                'gateway_short' => 'Payin 10',
+                'min_amount' => RojgaarPeLibrary::PAYOUT_MIN,
+                'max_amount' => RojgaarPeLibrary::PAYOUT_MAX,
+                'provider_callback_path' => 'api/call-back/rojgaarpe-payout',
+            ],
+            18 => [
+                'gateway_label' => 'Payin 11 (FrapPay)',
+                'gateway_short' => 'Payin 11',
+                'min_amount' => FrapPayLibrary::PAYOUT_MIN,
+                'max_amount' => FrapPayLibrary::PAYOUT_MAX,
+                'provider_callback_path' => 'api/call-back/frappay-payout',
+            ],
+            19 => [
+                'gateway_label' => 'Payin 12 (AurexaPay)',
+                'gateway_short' => 'Payin 12',
+                'min_amount' => AurexaPayLibrary::PAYOUT_MIN,
+                'max_amount' => AurexaPayLibrary::PAYOUT_MAX,
+                'provider_callback_path' => 'api/call-back/aurexapay-payout',
+            ],
+        ];
+
+        $meta = $catalog[$apiId] ?? [
+            'gateway_label' => 'Configured payout gateway',
+            'gateway_short' => 'Payout',
+            'min_amount' => 1,
+            'max_amount' => 10000000,
+            'provider_callback_path' => '',
+        ];
+
+        $api = Api::find($apiId);
+        if ($api && !empty($api->api_name)) {
+            $meta['gateway_label'] = $meta['gateway_short'] !== 'Payout'
+                ? $meta['gateway_short'] . ' (' . $api->api_name . ')'
+                : (string)$api->api_name;
+        }
+
+        $provider = Provider::where('api_id', $apiId)->where('status_id', 1)->orderByDesc('id')->first()
+            ?: Provider::where('api_id', $apiId)->orderByDesc('id')->first();
+        if ($provider) {
+            if (isset($provider->min_amount) && (float)$provider->min_amount > 0) {
+                $meta['min_amount'] = (float)$provider->min_amount;
+            }
+            if (isset($provider->max_amount) && (float)$provider->max_amount > 0) {
+                $meta['max_amount'] = (float)$provider->max_amount;
+            }
+        }
+
+        // Prefer library payout limits for known gateways (provider min/max is often payin-oriented).
+        if ($apiId === 19) {
+            $meta['min_amount'] = AurexaPayLibrary::PAYOUT_MIN;
+            $meta['max_amount'] = AurexaPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 17) {
+            $meta['min_amount'] = RojgaarPeLibrary::PAYOUT_MIN;
+            $meta['max_amount'] = RojgaarPeLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 18) {
+            $meta['min_amount'] = FrapPayLibrary::PAYOUT_MIN;
+            $meta['max_amount'] = FrapPayLibrary::PAYOUT_MAX;
+        }
+
+        return [
+            'payout_api_id' => $apiId,
+            'payout_gateway_label' => $meta['gateway_label'],
+            'payout_gateway_short' => $meta['gateway_short'],
+            'payout_min_amount' => (int)$meta['min_amount'],
+            'payout_max_amount' => (int)$meta['max_amount'],
+            'payout_provider_callback' => $meta['provider_callback_path'] !== ''
+                ? url($meta['provider_callback_path'])
+                : '',
+        ];
     }
 
     function collectPayment()
