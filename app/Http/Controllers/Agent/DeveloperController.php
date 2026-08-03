@@ -12,7 +12,6 @@ use App\Library\BasicLibrary;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\Provider;
-use App\Models\Api;
 use App\Models\Banktransferswitching;
 use App\Models\Traceurl;
 use Validator;
@@ -474,28 +473,24 @@ class DeveloperController extends Controller
 
         $catalog = [
             16 => [
-                'gateway_label' => 'Payin 9 (Quick Pay Cash)',
                 'gateway_short' => 'Payin 9',
                 'min_amount' => 1,
                 'max_amount' => 100000,
                 'provider_callback_path' => 'api/call-back/qpc-payout',
             ],
             17 => [
-                'gateway_label' => 'Payin 10 (RojgaarPe)',
                 'gateway_short' => 'Payin 10',
                 'min_amount' => RojgaarPeLibrary::PAYOUT_MIN,
                 'max_amount' => RojgaarPeLibrary::PAYOUT_MAX,
                 'provider_callback_path' => 'api/call-back/rojgaarpe-payout',
             ],
             18 => [
-                'gateway_label' => 'Payin 11 (FrapPay)',
                 'gateway_short' => 'Payin 11',
                 'min_amount' => FrapPayLibrary::PAYOUT_MIN,
                 'max_amount' => FrapPayLibrary::PAYOUT_MAX,
                 'provider_callback_path' => 'api/call-back/frappay-payout',
             ],
             19 => [
-                'gateway_label' => 'Payin 12 (AurexaPay)',
                 'gateway_short' => 'Payin 12',
                 'min_amount' => AurexaPayLibrary::PAYOUT_MIN,
                 'max_amount' => AurexaPayLibrary::PAYOUT_MAX,
@@ -504,19 +499,11 @@ class DeveloperController extends Controller
         ];
 
         $meta = $catalog[$apiId] ?? [
-            'gateway_label' => 'Configured payout gateway',
             'gateway_short' => 'Payout',
             'min_amount' => 1,
             'max_amount' => 10000000,
             'provider_callback_path' => '',
         ];
-
-        $api = Api::find($apiId);
-        if ($api && !empty($api->api_name)) {
-            $meta['gateway_label'] = $meta['gateway_short'] !== 'Payout'
-                ? $meta['gateway_short'] . ' (' . $api->api_name . ')'
-                : (string)$api->api_name;
-        }
 
         $provider = Provider::where('api_id', $apiId)->where('status_id', 1)->orderByDesc('id')->first()
             ?: Provider::where('api_id', $apiId)->orderByDesc('id')->first();
@@ -543,7 +530,7 @@ class DeveloperController extends Controller
 
         return [
             'payout_api_id' => $apiId,
-            'payout_gateway_label' => $meta['gateway_label'],
+            'payout_gateway_label' => 'Payout',
             'payout_gateway_short' => $meta['gateway_short'],
             'payout_min_amount' => (int)$meta['min_amount'],
             'payout_max_amount' => (int)$meta['max_amount'],

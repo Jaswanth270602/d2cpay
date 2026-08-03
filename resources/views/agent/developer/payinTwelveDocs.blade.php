@@ -12,14 +12,14 @@
                 <div class="card" id="basic-alert">
                     <div class="card-body">
                         <div>
-                            <h6 class="card-title mb-1">Create Order (Payin 12 — AurexaPay)</h6>
+                            <h6 class="card-title mb-1">Create Order (Payin 12)</h6>
                         </div>
                         <hr>
 
-                        <p>Creates a Payin 12 UPI collection order via AurexaPay. Send your API token as a <strong>Bearer</strong> token in the <code>Authorization</code> header. Request body may be sent as <code>application/json</code> or <code>application/x-www-form-urlencoded</code> (form fields).</p>
+                        <p>Creates a Payin 12 UPI collection order. Send your API token as a <strong>Bearer</strong> token in the <code>Authorization</code> header. Request body may be sent as <code>application/json</code> or <code>application/x-www-form-urlencoded</code> (form fields).</p>
 
                         <div class="alert alert-info mg-b-0" role="alert">
-                            <strong>Amount limits:</strong> ₹1 – ₹1,00,000 per transaction (configurable on provider).
+                            <strong>Amount limits:</strong> ₹500 – ₹25,000 per transaction.
                         </div>
 
                         <table class="table main-table-reference mt-3 mb-0">
@@ -80,7 +80,7 @@
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -d "amount=500" \
   -d "client_id=PAYIN10_PROD_20260711120000" \
-  -d "callback_url=https://your-domain.com/AurexaPay/callback" \
+  -d "callback_url=https://your-domain.com/payin12/callback" \
   -d "customer_name=Test Customer" \
   -d "mobile_number=9876543210" \
   -d "email=test@example.com"</pre>
@@ -124,11 +124,11 @@
                             </tr>
                             <tr>
                                 <td><code>order_token</code></td>
-                                <td>Merchant order reference sent to AurexaPay (e.g. <code>RPI1205143021</code>).</td>
+                                <td>Merchant order reference sent to the gateway (e.g. <code>RPI1205143021</code>).</td>
                             </tr>
                             <tr>
                                 <td><code>transaction_id</code></td>
-                                <td>AurexaPay platform order / transaction ID.</td>
+                                <td>Gateway platform order / transaction ID.</td>
                             </tr>
                             <tr>
                                 <td><code>report_id</code></td>
@@ -144,11 +144,11 @@
                             </tr>
                             <tr>
                                 <td><code>paymentUrl</code></td>
-                                <td>AurexaPay hosted payment page URL, when provided by the gateway.</td>
+                                <td>Gateway hosted payment page URL, when provided.</td>
                             </tr>
                             <tr>
                                 <td><code>utr_input_url</code></td>
-                                <td>Optional manual UTR submission link from AurexaPay, when applicable.</td>
+                                <td>Optional manual UTR submission link from the gateway, when applicable.</td>
                             </tr>
                             <tr>
                                 <td><code>payment_status</code></td>
@@ -169,7 +169,7 @@ or
 or
 {
     "status": "failure",
-    "message": "AurexaPay credentials not configured"
+    "message": "Payin 12 credentials not configured"
 }</pre>
                     </div>
                 </div>
@@ -183,7 +183,7 @@ or
                         </div>
                         <hr>
 
-                        <p>Poll transaction status using the same <code>client_id</code> from create order. If the order is still pending, {{ $company_website ?: 'd2cpay' }} will attempt to sync status from AurexaPay before responding.</p>
+                        <p>Poll transaction status using the same <code>client_id</code> from create order. If the order is still pending, {{ $company_website ?: 'd2cpay' }} will attempt to sync status from the gateway before responding.</p>
 
                         <table class="table main-table-reference mt-0 mb-0">
                             <tr>
@@ -328,9 +328,9 @@ $expected = hash_hmac('sha256', $signatureString, YOUR_API_TOKEN);
                     </div>
                     <div class="card-footer">
 <pre>Sample callback URL (GET) :
-https://your-domain.com/AurexaPay/callback?status=credit&amp;client_id=PAYIN10_PROD_20260711120000&amp;amount=500&amp;utr=010555695027&amp;txnid=1205&amp;signature=abc123...</pre>
+https://your-domain.com/payin12/callback?status=credit&amp;client_id=PAYIN12_PROD_20260711120000&amp;amount=500&amp;utr=010555695027&amp;txnid=1205&amp;signature=abc123...</pre>
                         <hr>
-                        <p class="mb-0"><small><strong>Note:</strong> Use the <code>callback_url</code> you pass in create order. This is separate from the AurexaPay webhook (<code>{{ url('api/call-back/aurexapay-payin') }}</code>) which is handled internally by {{ $company_website ?: 'd2cpay' }}.</small></p>
+                        <p class="mb-0"><small><strong>Note:</strong> Use the <code>callback_url</code> you pass in create order. This is separate from the Payin 12 webhook (<code>{{ url('api/call-back/aurexapay-payin') }}</code>) which is handled internally by {{ $company_website ?: 'd2cpay' }}.</small></p>
                     </div>
                 </div>
 
