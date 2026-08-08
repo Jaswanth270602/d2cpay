@@ -21,6 +21,7 @@ use Hash;
 use Str;
 use App\Models\Agentonboarding;
 use App\Library\AurexaPayLibrary;
+use App\Library\MizorPayLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
 
@@ -496,6 +497,12 @@ class DeveloperController extends Controller
                 'max_amount' => AurexaPayLibrary::PAYOUT_MAX,
                 'provider_callback_path' => 'api/call-back/aurexapay-payout',
             ],
+            20 => [
+                'gateway_short' => 'MizorPay',
+                'min_amount' => MizorPayLibrary::PAYOUT_MIN,
+                'max_amount' => MizorPayLibrary::PAYOUT_MAX,
+                'provider_callback_path' => 'api/call-back/mizorpay-payout',
+            ],
         ];
 
         $meta = $catalog[$apiId] ?? [
@@ -526,6 +533,9 @@ class DeveloperController extends Controller
         } elseif ($apiId === 18) {
             $meta['min_amount'] = FrapPayLibrary::PAYOUT_MIN;
             $meta['max_amount'] = FrapPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 20) {
+            $meta['min_amount'] = MizorPayLibrary::PAYOUT_MIN;
+            $meta['max_amount'] = MizorPayLibrary::PAYOUT_MAX;
         }
 
         return [

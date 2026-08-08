@@ -8,8 +8,66 @@
                 dropdownParent: $('#add_beneficiary_model')
             });
 
-            get_customer ();
+            get_customer();
+
+            $(document).on('input blur', '#amount', function () {
+                validatePayoutAmount(false);
+            });
         });
+
+        function getPayoutAmountLimits() {
+            return {
+                min: parseFloat($('#amount').data('min')) || 100,
+                max: parseFloat($('#amount').data('max')) || 25000
+            };
+        }
+
+        function validatePayoutAmount(requireValue) {
+            var limits = getPayoutAmountLimits();
+            var raw = $.trim($('#amount').val());
+            var $error = $('#amount_errors');
+            var $input = $('#amount');
+            var $btn = $('#trnasfer_btn');
+
+            $error.text('');
+            $input.removeClass('is-invalid');
+
+            if (raw === '') {
+                if (requireValue) {
+                    $error.text('Amount is required');
+                    $input.addClass('is-invalid');
+                    $btn.prop('disabled', true);
+                    return false;
+                }
+                $btn.prop('disabled', false);
+                return true;
+            }
+
+            var amountValue = parseFloat(raw);
+            if (isNaN(amountValue)) {
+                $error.text('Enter a valid amount');
+                $input.addClass('is-invalid');
+                $btn.prop('disabled', true);
+                return false;
+            }
+
+            if (amountValue < limits.min) {
+                $error.text('Minimum payout amount is Rs ' + limits.min);
+                $input.addClass('is-invalid');
+                $btn.prop('disabled', true);
+                return false;
+            }
+
+            if (amountValue > limits.max) {
+                $error.text('Maximum payout amount is Rs ' + limits.max);
+                $input.addClass('is-invalid');
+                $btn.prop('disabled', true);
+                return false;
+            }
+
+            $btn.prop('disabled', false);
+            return true;
+        }
 
         function get_customer() {
             $(".loader").show();
@@ -184,6 +242,10 @@
             $("#transfer_bank_name").val(bankname);
             $("#transfer_ifsc_code").val(ifsccode);
             $("#transfer_recipient_id").val(recipientid);
+            $("#amount").val('');
+            $("#amount_errors").text('');
+            $("#amount").removeClass('is-invalid');
+            $("#trnasfer_btn").prop('disabled', false);
             $("#transfer_model").modal('show');
         }
 
@@ -214,6 +276,11 @@
             var millisecond = $("#money_millisecond").val();
             var latitude = $("#inputLatitude").val();
             var longitude = $("#inputLongitude").val();
+
+            if (!validatePayoutAmount(true)) {
+                return;
+            }
+
             if (latitude && longitude){
                 $("#trnasfer_btn").hide();
                 $("#trnasfer_btn_loader").show();
@@ -489,8 +556,9 @@
 
                             <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label for="name">Amount</label>
-                                    <input type="text" id="amount" class="form-control" placeholder="Amount">
+                                    <label for="amount">Amount</label>
+                                    <input type="number" id="amount" class="form-control" placeholder="Amount"
+                                           data-min="{{ $payout_min_amount ?? 100 }}" data-max="{{ $payout_max_amount ?? 25000 }}">
                                     <ul class="parsley-errors-list filled">
                                         <li class="parsley-required" id="amount_errors"></li>
                                     </ul>

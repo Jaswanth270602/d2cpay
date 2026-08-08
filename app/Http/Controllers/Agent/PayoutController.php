@@ -38,6 +38,7 @@ use App\Library\QuickPayCashLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
 use App\Library\AurexaPayLibrary;
+use App\Library\MizorPayLibrary;
 use App\Library\LockHoldPayoutLibrary;
 use DB;
 
@@ -83,7 +84,12 @@ class PayoutController extends Controller
         $activeService = $library->getActiveService($provider_id, $user_id);
         $serviceStatus = $activeService['status_id'];
         if ($serviceStatus == 1) {
-            $data = array('page_title' => 'Payout');
+            $limits = $this->resolvePayoutAmountLimits($user_id);
+            $data = array(
+                'page_title' => 'Payout',
+                'payout_min_amount' => (int)$limits['min'],
+                'payout_max_amount' => (int)$limits['max'],
+            );
             $masterbank = Masterbank::where('status_id', 1)->get();
             return view('agent.aeps.move_to_bank', compact('masterbank'))->with($data);
         } else {
@@ -492,6 +498,8 @@ class PayoutController extends Controller
 
     function transfer_now(Request $request)
     {
+        $user_id = Auth::id();
+        $limits = $this->resolvePayoutAmountLimits($user_id, $request->amount);
         $rules = array(
             'mobile_number' => 'required|exists:payoutbeneficiaries,mobile_number',
             'account_number' => 'required|exists:payoutbeneficiaries,account_number',
@@ -499,7 +507,7 @@ class PayoutController extends Controller
             'bank_name' => 'required',
             'ifsc_code' => 'required',
             'recipient_id' => 'required|exists:payoutbeneficiaries,id',
-            'amount' => 'required',
+            'amount' => 'required|numeric|between:' . $limits['min'] . ',' . $limits['max'],
             'password' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
@@ -518,7 +526,6 @@ class PayoutController extends Controller
         $recipient_id = $request->recipient_id;
         $amount = $request->amount;
         $password = $request->password;
-        $user_id = Auth::id();
         $mode = "WEB";
         $request_ip = request()->ip();
         $latitude = $request->latitude;
@@ -534,6 +541,8 @@ class PayoutController extends Controller
 
     function transfer_now_app(Request $request)
     {
+        $user_id = Auth::id();
+        $limits = $this->resolvePayoutAmountLimits($user_id, $request->amount);
         $rules = array(
             'mobile_number' => 'required|exists:payoutbeneficiaries,mobile_number',
             'account_number' => 'required|exists:payoutbeneficiaries,account_number',
@@ -541,7 +550,7 @@ class PayoutController extends Controller
             'bank_name' => 'required',
             'ifsc_code' => 'required',
             'recipient_id' => 'required|exists:payoutbeneficiaries,id',
-            'amount' => 'required',
+            'amount' => 'required|numeric|between:' . $limits['min'] . ',' . $limits['max'],
             'password' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
@@ -560,7 +569,6 @@ class PayoutController extends Controller
         $recipient_id = $request->recipient_id;
         $amount = $request->amount;
         $password = $request->password;
-        $user_id = Auth::id();
         $mode = "APP";
         $request_ip = request()->ip();
         $latitude = $request->latitude;
@@ -578,8 +586,17 @@ class PayoutController extends Controller
     function transfer_now_middle($mobile_number, $account_number, $holder_name, $bank_name, $ifsc_code, $recipient_id, $amount, $password, $user_id, $mode, $request_ip, $latitude, $longitude)
     {
         $provider_id = 324;
-        if ($amount >= 1 && $amount <= 10000000) {
-            $userdetails = User::find($user_id);
+        $amount = (float)$amount;
+        $limits = $this->resolvePayoutAmountLimits($user_id, $amount);
+        if ($amount < $limits['min'] || $amount > $limits['max']) {
+            return Response()->json([
+                'status' => 'failure',
+                'message' => $this->payoutAmountLimitMessage($limits['min'], $limits['max']),
+            ]);
+        }
+
+        $userdetails = User::find($user_id);
+        if ($userdetails) {
             $library = new BasicLibrary();
             $activeService = $library->getActiveService($provider_id, $user_id);
             $serviceStatus = $activeService['status_id'];
@@ -600,17 +617,7 @@ class PayoutController extends Controller
                         $rf = $commission['referral'];
                         $opening_balance = $userdetails->balance->user_balance;
                         $sumamount = $amount + $userdetails->lock_amount + $retailer;
-                        $api_id = $userdetails->company->payout_route;
-                        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
-                            ->where('maximum_amount', '>=', $amount)
-                            ->where(function ($query) use ($user_id) {
-                                $query->where('user_id', $user_id)
-                                    ->orWhere('user_id', 0) // Handle case where user_id is 0
-                                    ->orWhereNull('user_id'); // Handle case where user_id might not be set
-                            })->first();
-                        if ($banktransferswitching) {
-                            $api_id = $banktransferswitching->api_id ?? $api_id;
-                        }
+                        $api_id = $this->resolvePayoutApiId($userdetails, $amount, $user_id);
                         if ($opening_balance >= $sumamount && $sumamount >= 9) {
                             $decrementAmount = $amount + $retailer;
                             Balance::where('user_id', $user_id)->decrement('user_balance', $decrementAmount);
@@ -706,8 +713,63 @@ class PayoutController extends Controller
                 return Response()->json(['status' => 'failure', 'message' => $message]);
             }
         } else {
-            return Response()->json(['status' => 'failure', 'message' => 'Amount Should be Minimum Rs 1 Or Maximum 10000000']);
+            return Response()->json(['status' => 'failure', 'message' => 'User not found']);
         }
+    }
+
+    private function resolvePayoutApiId($userdetails, float $amount, int $user_id): int
+    {
+        $api_id = (int)($userdetails->company->payout_route ?? 0);
+        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
+            ->where('maximum_amount', '>=', $amount)
+            ->where(function ($query) use ($user_id) {
+                $query->where('user_id', $user_id)
+                    ->orWhere('user_id', 0)
+                    ->orWhereNull('user_id');
+            })->first();
+        if ($banktransferswitching) {
+            $api_id = (int)($banktransferswitching->api_id ?? $api_id);
+        }
+
+        return $api_id;
+    }
+
+    private function resolvePayoutAmountLimits(int $user_id, $amount = null): array
+    {
+        $provider = Provider::find(324);
+        $min = (float)($provider->min_amount ?? 0);
+        $max = (float)($provider->max_amount ?? 0);
+        if ($min <= 0) {
+            $min = 1;
+        }
+        if ($max <= 0) {
+            $max = 10000000;
+        }
+
+        $userdetails = User::with('company')->find($user_id);
+        $apiId = (int)($userdetails->company->payout_route ?? 0);
+        if ($amount !== null && $userdetails) {
+            $apiId = $this->resolvePayoutApiId($userdetails, (float)$amount, $user_id);
+        }
+
+        if ($apiId === 20) {
+            $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
+            $max = min($max, (float)MizorPayLibrary::PAYOUT_MAX);
+        } elseif ($apiId === 19) {
+            $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
+            $max = min($max, (float)AurexaPayLibrary::PAYOUT_MAX);
+        }
+
+        return [
+            'min' => $min,
+            'max' => $max,
+            'api_id' => $apiId,
+        ];
+    }
+
+    private function payoutAmountLimitMessage(float $min, float $max): string
+    {
+        return 'Amount should be minimum Rs ' . (int)$min . ' or maximum Rs ' . (int)$max;
     }
 
 
@@ -753,6 +815,9 @@ class PayoutController extends Controller
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id);
         }elseif ($api_id == 19){
             $library = new AurexaPayLibrary();
+            return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, 2, $bank_name);
+        }elseif ($api_id == 20){
+            $library = new MizorPayLibrary();
             return $library->transferNow($user_id, $mobile_number, $amount, $holder_name, $account_number, $ifsc_code, $insert_id, 2, $bank_name);
         }
         return ['status_id' => 2, 'txnid' => '', 'payid' => ''];

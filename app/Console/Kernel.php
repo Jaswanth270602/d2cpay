@@ -18,6 +18,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('rojgaarpe:sync-pending')->everyFiveMinutes();
         $schedule->command('frappay:sync-pending')->everyMinute();
         $schedule->command('aurexapay:sync-pending')->everyFiveMinutes();
+        $schedule->command('mizorpay:sync-pending')->everyFiveMinutes();
     }
 
     /**
