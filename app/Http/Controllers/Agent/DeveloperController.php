@@ -457,17 +457,22 @@ class DeveloperController extends Controller
         $user = User::with('company')->find($userId);
         $apiId = (int)($user->company->payout_route ?? 0);
 
-        $switching = Banktransferswitching::where('user_id', $userId)
+        $parentId = (int)($user->parent_id ?? 0);
+        $switchingIds = [$userId, 0];
+        if ($parentId > 0) {
+            $switchingIds[] = $parentId;
+        }
+        $switchingIds = array_values(array_unique($switchingIds));
+        $switching = Banktransferswitching::where(function ($query) use ($switchingIds) {
+                $query->whereIn('user_id', $switchingIds)->orWhereNull('user_id');
+            })
+            ->where(function ($query) {
+                $query->where('status_id', 1)->orWhereNull('status_id');
+            })
+            ->orderByRaw('CASE WHEN user_id = ? THEN 0 WHEN user_id = 0 OR user_id IS NULL THEN 2 ELSE 1 END', [$userId])
+            ->orderByRaw('CAST(maximum_amount AS DECIMAL(15,2)) DESC')
             ->orderByDesc('id')
             ->first();
-
-        if (!$switching) {
-            $switching = Banktransferswitching::where(function ($query) {
-                $query->where('user_id', 0)->orWhereNull('user_id');
-            })
-                ->orderByDesc('id')
-                ->first();
-        }
 
         if ($switching && !empty($switching->api_id)) {
             $apiId = (int)$switching->api_id;

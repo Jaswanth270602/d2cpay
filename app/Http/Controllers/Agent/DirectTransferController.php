@@ -356,7 +356,7 @@ class DirectTransferController extends Controller
 
     function trasnferNowWeb(Request $request)
     {
-        $limits = $this->resolveAmountLimits();
+        $limits = $this->resolveAmountLimits($request->amount);
         $rules = array(
             'mobile_number' => 'required|digits:10',
             //'email' => 'required|email',
@@ -393,7 +393,7 @@ class DirectTransferController extends Controller
 
     function transfer_now_api(Request $request)
     {
-        $limits = $this->resolveAmountLimits();
+        $limits = $this->resolveAmountLimits($request->amount);
         $rules = array(
             'mobile_number' => 'required|digits:10',
             'email' => 'required|email',
@@ -727,7 +727,71 @@ class DirectTransferController extends Controller
         return ['processed' => true];
     }
 
-    private function resolveAmountLimits(): array
+    private function payoutSwitchingUserIds(int $user_id): array
+    {
+        $ids = [$user_id, 0];
+        $parentId = (int)(User::where('id', $user_id)->value('parent_id') ?? 0);
+        if ($parentId > 0) {
+            $ids[] = $parentId;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function payoutSwitchingQuery(int $user_id)
+    {
+        $ids = $this->payoutSwitchingUserIds($user_id);
+
+        return Banktransferswitching::query()
+            ->where(function ($query) use ($ids) {
+                $query->whereIn('user_id', $ids)->orWhereNull('user_id');
+            })
+            ->where(function ($query) {
+                $query->where('status_id', 1)->orWhereNull('status_id');
+            });
+    }
+
+    private function applyGatewayPayoutLimits(int $apiId, float $min, float $max): array
+    {
+        if ($apiId === 20) {
+            $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
+            $max = (float)MizorPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 19) {
+            $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
+            $max = (float)AurexaPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 18) {
+            $min = max($min, (float)FrapPayLibrary::PAYOUT_MIN);
+            $max = min($max, (float)FrapPayLibrary::PAYOUT_MAX);
+        } elseif ($apiId === 17) {
+            $min = max($min, (float)RojgaarPeLibrary::PAYOUT_MIN);
+            $max = (float)RojgaarPeLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 16) {
+            $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
+        }
+
+        return [$min, $max];
+    }
+
+    private function applySwitchingAmountBounds($switching, float $min, float $max): array
+    {
+        if (!$switching) {
+            return [$min, $max];
+        }
+
+        $switchMin = (float)($switching->minimum_amount ?? 0);
+        $switchMax = (float)($switching->maximum_amount ?? 0);
+        if ($switchMin > 0) {
+            $min = max($min, $switchMin);
+        }
+        if ($switchMax > 0) {
+            $max = min($max, $switchMax);
+        }
+
+        return [$min, $max];
+    }
+
+    private function resolveAmountLimits($amount = null): array
     {
         $providers = Provider::find($this->provider_id);
         $min = (float)($providers->min_amount ?? 1);
@@ -735,39 +799,51 @@ class DirectTransferController extends Controller
         if ($min <= 0) {
             $min = 1;
         }
-        if ($max <= 0 || $max < (float)QuickPayCashLibrary::PAYOUT_MAX) {
+        if ($max <= 0) {
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
         $user = Auth::User();
         $userId = (int)($user->id ?? 0);
         $apiId = (int)(optional($user->company)->payout_route ?? 0);
-        $switching = $this->findPayoutSwitching($userId, null);
+
+        if ($userId <= 0) {
+            return ['min' => $min, 'max' => $max];
+        }
+
+        if ($amount === null || $amount === '') {
+            [$min, $max] = $this->applyGatewayPayoutLimits($apiId, $min, $max);
+            $rules = $this->payoutSwitchingQuery($userId)
+                ->orderByRaw('CAST(maximum_amount AS DECIMAL(15,2)) DESC')
+                ->get();
+            foreach ($rules as $rule) {
+                $switchApi = (int)($rule->api_id ?? 0);
+                if ($switchApi <= 0) {
+                    continue;
+                }
+                [$ruleMin, $ruleMax] = $this->applyGatewayPayoutLimits(
+                    $switchApi,
+                    1,
+                    (float)QuickPayCashLibrary::PAYOUT_MAX
+                );
+                [$ruleMin, $ruleMax] = $this->applySwitchingAmountBounds($rule, $ruleMin, $ruleMax);
+                if ($ruleMax > $max) {
+                    $max = $ruleMax;
+                    $min = $ruleMin;
+                    $apiId = $switchApi;
+                }
+            }
+
+            return ['min' => $min, 'max' => $max];
+        }
+
+        $switching = $this->findPayoutSwitching($userId, $amount);
         if ($switching && !empty($switching->api_id)) {
             $apiId = (int)$switching->api_id;
         }
 
-        if ($apiId === 20) {
-            $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
-            $max = (float)MizorPayLibrary::PAYOUT_MAX;
-        } elseif ($apiId === 19) {
-            $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
-            $max = (float)AurexaPayLibrary::PAYOUT_MAX;
-        } elseif ($apiId === 16) {
-            $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
-            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
-        }
-
-        if ($switching) {
-            $switchMin = (float)($switching->minimum_amount ?? 0);
-            $switchMax = (float)($switching->maximum_amount ?? 0);
-            if ($switchMin > 0) {
-                $min = max($min, $switchMin);
-            }
-            if ($switchMax > 0) {
-                $max = min($max, $switchMax);
-            }
-        }
+        [$min, $max] = $this->applyGatewayPayoutLimits($apiId, $min, $max);
+        [$min, $max] = $this->applySwitchingAmountBounds($switching, $min, $max);
 
         return ['min' => $min, 'max' => $max];
     }
@@ -778,18 +854,14 @@ class DirectTransferController extends Controller
             return null;
         }
 
-        $query = Banktransferswitching::query()->where(function ($query) use ($user_id) {
-            $query->where('user_id', $user_id)
-                ->orWhere('user_id', 0)
-                ->orWhereNull('user_id');
-        });
+        $query = $this->payoutSwitchingQuery($user_id);
         if ($amount !== null) {
             $query->where('minimum_amount', '<=', $amount)
                 ->where('maximum_amount', '>=', $amount);
         }
 
-        return $query->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$user_id])
-            ->orderByDesc('maximum_amount')
+        return $query->orderByRaw('CASE WHEN user_id = ? THEN 0 WHEN user_id = 0 OR user_id IS NULL THEN 2 ELSE 1 END', [$user_id])
+            ->orderByRaw('CAST(maximum_amount AS DECIMAL(15,2)) DESC')
             ->orderByDesc('id')
             ->first();
     }
