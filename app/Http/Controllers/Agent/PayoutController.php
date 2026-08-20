@@ -720,39 +720,34 @@ class PayoutController extends Controller
     private function resolvePayoutApiId($userdetails, float $amount, int $user_id): int
     {
         $api_id = (int)($userdetails->company->payout_route ?? 0);
-        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
-            ->where('maximum_amount', '>=', $amount)
-            ->where(function ($query) use ($user_id) {
-                $query->where('user_id', $user_id)
-                    ->orWhere('user_id', 0)
-                    ->orWhereNull('user_id');
-            })->first();
-        if ($banktransferswitching) {
-            $api_id = (int)($banktransferswitching->api_id ?? $api_id);
+        $switching = $this->findPayoutSwitching($user_id, $amount);
+        if ($switching) {
+            $api_id = (int)($switching->api_id ?? $api_id);
         }
 
         return $api_id;
     }
 
-    private function resolvePayoutAmountLimits(int $user_id, $amount = null): array
+    private function findPayoutSwitching(int $user_id, $amount = null)
     {
-        $provider = Provider::find(324);
-        $min = (float)($provider->min_amount ?? 0);
-        $max = (float)($provider->max_amount ?? 0);
-        if ($min <= 0) {
-            $min = 1;
-        }
-        // Provider 324 max is often 25000; default to 1 crore unless a gateway caps lower.
-        if ($max <= 0 || $max < (float)QuickPayCashLibrary::PAYOUT_MAX) {
-            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
-        }
-
-        $userdetails = User::with('company')->find($user_id);
-        $apiId = (int)($userdetails->company->payout_route ?? 0);
-        if ($amount !== null && $userdetails) {
-            $apiId = $this->resolvePayoutApiId($userdetails, (float)$amount, $user_id);
+        $query = Banktransferswitching::query()->where(function ($query) use ($user_id) {
+            $query->where('user_id', $user_id)
+                ->orWhere('user_id', 0)
+                ->orWhereNull('user_id');
+        });
+        if ($amount !== null) {
+            $query->where('minimum_amount', '<=', $amount)
+                ->where('maximum_amount', '>=', $amount);
         }
 
+        return $query->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$user_id])
+            ->orderByDesc('maximum_amount')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    private function applyGatewayPayoutLimits(int $apiId, float $min, float $max): array
+    {
         if ($apiId === 20) {
             $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
             $max = (float)MizorPayLibrary::PAYOUT_MAX;
@@ -768,6 +763,41 @@ class PayoutController extends Controller
         } elseif ($apiId === 16) {
             $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
+        }
+
+        return [$min, $max];
+    }
+
+    private function resolvePayoutAmountLimits(int $user_id, $amount = null): array
+    {
+        $provider = Provider::find(324);
+        $min = (float)($provider->min_amount ?? 0);
+        $max = (float)($provider->max_amount ?? 0);
+        if ($min <= 0) {
+            $min = 1;
+        }
+        if ($max <= 0 || $max < (float)QuickPayCashLibrary::PAYOUT_MAX) {
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
+        }
+
+        $userdetails = User::with('company')->find($user_id);
+        $apiId = (int)($userdetails->company->payout_route ?? 0);
+        $switching = $this->findPayoutSwitching($user_id, $amount);
+        if ($switching && !empty($switching->api_id)) {
+            $apiId = (int)$switching->api_id;
+        }
+
+        [$min, $max] = $this->applyGatewayPayoutLimits($apiId, $min, $max);
+
+        if ($switching) {
+            $switchMin = (float)($switching->minimum_amount ?? 0);
+            $switchMax = (float)($switching->maximum_amount ?? 0);
+            if ($switchMin > 0) {
+                $min = max($min, $switchMin);
+            }
+            if ($switchMax > 0) {
+                $max = min($max, $switchMax);
+            }
         }
 
         return [

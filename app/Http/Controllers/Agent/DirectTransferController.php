@@ -739,7 +739,14 @@ class DirectTransferController extends Controller
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
-        $apiId = (int)(optional(optional(Auth::User())->company)->payout_route ?? 0);
+        $user = Auth::User();
+        $userId = (int)($user->id ?? 0);
+        $apiId = (int)(optional($user->company)->payout_route ?? 0);
+        $switching = $this->findPayoutSwitching($userId, null);
+        if ($switching && !empty($switching->api_id)) {
+            $apiId = (int)$switching->api_id;
+        }
+
         if ($apiId === 20) {
             $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
             $max = (float)MizorPayLibrary::PAYOUT_MAX;
@@ -751,22 +758,48 @@ class DirectTransferController extends Controller
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
+        if ($switching) {
+            $switchMin = (float)($switching->minimum_amount ?? 0);
+            $switchMax = (float)($switching->maximum_amount ?? 0);
+            if ($switchMin > 0) {
+                $min = max($min, $switchMin);
+            }
+            if ($switchMax > 0) {
+                $max = min($max, $switchMax);
+            }
+        }
+
         return ['min' => $min, 'max' => $max];
+    }
+
+    private function findPayoutSwitching(int $user_id, $amount = null)
+    {
+        if ($user_id <= 0) {
+            return null;
+        }
+
+        $query = Banktransferswitching::query()->where(function ($query) use ($user_id) {
+            $query->where('user_id', $user_id)
+                ->orWhere('user_id', 0)
+                ->orWhereNull('user_id');
+        });
+        if ($amount !== null) {
+            $query->where('minimum_amount', '<=', $amount)
+                ->where('maximum_amount', '>=', $amount);
+        }
+
+        return $query->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$user_id])
+            ->orderByDesc('maximum_amount')
+            ->orderByDesc('id')
+            ->first();
     }
 
     private function resolvePayoutApiId($userdetails, $amount)
     {
         $api_id = $userdetails->company->payout_route;
-        $user_id = $userdetails->id;
-        $banktransferswitching = Banktransferswitching::where('minimum_amount', '<=', $amount)
-            ->where('maximum_amount', '>=', $amount)
-            ->where(function ($query) use ($user_id) {
-                $query->where('user_id', $user_id)
-                    ->orWhere('user_id', 0)
-                    ->orWhereNull('user_id');
-            })->first();
-        if ($banktransferswitching) {
-            $api_id = $banktransferswitching->api_id ?? $api_id;
+        $switching = $this->findPayoutSwitching((int)$userdetails->id, $amount);
+        if ($switching) {
+            $api_id = $switching->api_id ?? $api_id;
         }
         return $api_id;
     }
