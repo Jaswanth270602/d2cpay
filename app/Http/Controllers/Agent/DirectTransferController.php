@@ -356,14 +356,14 @@ class DirectTransferController extends Controller
 
     function trasnferNowWeb(Request $request)
     {
-        $providers = Provider::find($this->provider_id);
+        $limits = $this->resolveAmountLimits();
         $rules = array(
             'mobile_number' => 'required|digits:10',
             //'email' => 'required|email',
             'beneficiary_name' => 'required',
             'ifsc_code' => 'required|min:11|max:11',
             'account_number' => 'required',
-            'amount' => 'required|numeric|between:' . $providers->min_amount . ',' . $providers->max_amount . '',
+            'amount' => 'required|numeric|between:' . $limits['min'] . ',' . $limits['max'] . '',
             //'channel_id' => 'required',
             //'client_id' => 'required',
             //'client_id' => 'required',
@@ -393,14 +393,14 @@ class DirectTransferController extends Controller
 
     function transfer_now_api(Request $request)
     {
-        $providers = Provider::find($this->provider_id);
+        $limits = $this->resolveAmountLimits();
         $rules = array(
             'mobile_number' => 'required|digits:10',
             'email' => 'required|email',
             'beneficiary_name' => 'required',
             'ifsc_code' => 'required|min:11|max:11',
             'account_number' => 'required',
-            'amount' => 'required|numeric|between:' . $providers->min_amount . ',' . $providers->max_amount . '',
+            'amount' => 'required|numeric|between:' . $limits['min'] . ',' . $limits['max'] . '',
             'channel_id' => 'required',
             'client_id' => 'required',
             'bank_name' => 'required|string|max:150',
@@ -725,6 +725,27 @@ class DirectTransferController extends Controller
         );
 
         return ['processed' => true];
+    }
+
+    private function resolveAmountLimits(): array
+    {
+        $providers = Provider::find($this->provider_id);
+        $min = (float)($providers->min_amount ?? 1);
+        $max = (float)($providers->max_amount ?? 10000000);
+        if ($min <= 0) {
+            $min = 1;
+        }
+        if ($max <= 0) {
+            $max = 10000000;
+        }
+
+        $apiId = (int)(optional(optional(Auth::User())->company)->payout_route ?? 0);
+        if ($apiId === 16) {
+            $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
+        }
+
+        return ['min' => $min, 'max' => $max];
     }
 
     private function resolvePayoutApiId($userdetails, $amount)

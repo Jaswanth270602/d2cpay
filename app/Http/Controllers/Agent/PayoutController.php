@@ -758,6 +758,9 @@ class PayoutController extends Controller
         } elseif ($apiId === 19) {
             $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
             $max = min($max, (float)AurexaPayLibrary::PAYOUT_MAX);
+        } elseif ($apiId === 16) {
+            $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
         return [

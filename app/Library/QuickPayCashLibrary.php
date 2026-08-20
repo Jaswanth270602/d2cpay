@@ -9,6 +9,9 @@ namespace App\library {
 
     class QuickPayCashLibrary
     {
+        public const PAYOUT_MIN = 1;
+        public const PAYOUT_MAX = 10000000;
+
         private $api_id;
         private $base_url;
         private $merchantId;
@@ -240,6 +243,15 @@ namespace App\library {
         {
             if (empty($this->merchantId) || empty($this->merchantKey)) {
                 return ['status_id' => 3, 'txnid' => 'QPC credentials missing', 'payid' => ''];
+            }
+
+            $amount = (float)$amount;
+            if ($amount < self::PAYOUT_MIN || $amount > self::PAYOUT_MAX) {
+                return [
+                    'status_id' => 2,
+                    'txnid' => 'Amount must be between ' . self::PAYOUT_MIN . ' and ' . self::PAYOUT_MAX,
+                    'payid' => '',
+                ];
             }
 
             $merchantOrderNo = $this->buildPayoutRefId($insert_id);

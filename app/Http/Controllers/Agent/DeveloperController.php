@@ -24,6 +24,7 @@ use App\Library\AurexaPayLibrary;
 use App\Library\MizorPayLibrary;
 use App\Library\RojgaarPeLibrary;
 use App\Library\FrapPayLibrary;
+use App\Library\QuickPayCashLibrary;
 
 class DeveloperController extends Controller
 {
@@ -475,8 +476,8 @@ class DeveloperController extends Controller
         $catalog = [
             16 => [
                 'gateway_short' => 'Payin 9',
-                'min_amount' => 1,
-                'max_amount' => 100000,
+                'min_amount' => QuickPayCashLibrary::PAYOUT_MIN,
+                'max_amount' => QuickPayCashLibrary::PAYOUT_MAX,
                 'provider_callback_path' => 'api/call-back/qpc-payout',
             ],
             17 => [
@@ -536,6 +537,9 @@ class DeveloperController extends Controller
         } elseif ($apiId === 20) {
             $meta['min_amount'] = MizorPayLibrary::PAYOUT_MIN;
             $meta['max_amount'] = MizorPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 16) {
+            $meta['min_amount'] = QuickPayCashLibrary::PAYOUT_MIN;
+            $meta['max_amount'] = QuickPayCashLibrary::PAYOUT_MAX;
         }
 
         return [
