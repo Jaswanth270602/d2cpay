@@ -735,12 +735,18 @@ class DirectTransferController extends Controller
         if ($min <= 0) {
             $min = 1;
         }
-        if ($max <= 0) {
-            $max = 10000000;
+        if ($max <= 0 || $max < (float)QuickPayCashLibrary::PAYOUT_MAX) {
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
         $apiId = (int)(optional(optional(Auth::User())->company)->payout_route ?? 0);
-        if ($apiId === 16) {
+        if ($apiId === 20) {
+            $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
+            $max = (float)MizorPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 19) {
+            $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
+            $max = (float)AurexaPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 16) {
             $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }

@@ -17,8 +17,8 @@
 
         function getPayoutAmountLimits() {
             return {
-                min: parseFloat($('#amount').data('min')) || 100,
-                max: parseFloat($('#amount').data('max')) || 25000
+                min: parseFloat($('#amount').attr('data-min')) || 1,
+                max: parseFloat($('#amount').attr('data-max')) || 10000000
             };
         }
 
@@ -558,7 +558,7 @@
                                 <div class="form-group">
                                     <label for="amount">Amount</label>
                                     <input type="number" id="amount" class="form-control" placeholder="Amount"
-                                           data-min="{{ $payout_min_amount ?? 100 }}" data-max="{{ $payout_max_amount ?? 25000 }}">
+                                           data-min="{{ $payout_min_amount ?? 1 }}" data-max="{{ $payout_max_amount ?? 10000000 }}">
                                     <ul class="parsley-errors-list filled">
                                         <li class="parsley-required" id="amount_errors"></li>
                                     </ul>

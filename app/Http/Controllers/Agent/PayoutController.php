@@ -742,8 +742,9 @@ class PayoutController extends Controller
         if ($min <= 0) {
             $min = 1;
         }
-        if ($max <= 0) {
-            $max = 10000000;
+        // Provider 324 max is often 25000; default to 1 crore unless a gateway caps lower.
+        if ($max <= 0 || $max < (float)QuickPayCashLibrary::PAYOUT_MAX) {
+            $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
         }
 
         $userdetails = User::with('company')->find($user_id);
@@ -754,10 +755,16 @@ class PayoutController extends Controller
 
         if ($apiId === 20) {
             $min = max($min, (float)MizorPayLibrary::PAYOUT_MIN);
-            $max = min($max, (float)MizorPayLibrary::PAYOUT_MAX);
+            $max = (float)MizorPayLibrary::PAYOUT_MAX;
         } elseif ($apiId === 19) {
             $min = max($min, (float)AurexaPayLibrary::PAYOUT_MIN);
-            $max = min($max, (float)AurexaPayLibrary::PAYOUT_MAX);
+            $max = (float)AurexaPayLibrary::PAYOUT_MAX;
+        } elseif ($apiId === 18) {
+            $min = max($min, (float)FrapPayLibrary::PAYOUT_MIN);
+            $max = min($max, (float)FrapPayLibrary::PAYOUT_MAX);
+        } elseif ($apiId === 17) {
+            $min = max($min, (float)RojgaarPeLibrary::PAYOUT_MIN);
+            $max = (float)RojgaarPeLibrary::PAYOUT_MAX;
         } elseif ($apiId === 16) {
             $min = max($min, (float)QuickPayCashLibrary::PAYOUT_MIN);
             $max = (float)QuickPayCashLibrary::PAYOUT_MAX;
