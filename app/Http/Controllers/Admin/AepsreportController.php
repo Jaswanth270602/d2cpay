@@ -19,6 +19,7 @@ use \Crypt;
 use App\Commissionreport;
 use App\Aepsreport;
 use App\Library\PermissionLibrary;
+use App\Library\RojgaarPeLibrary;
 
 class AepsreportController extends Controller
 {
@@ -249,7 +250,7 @@ class AepsreportController extends Controller
                 "txnid" => $value->txnid,
                 "amount" => number_format($value->amount,2),
                 "profit" => number_format($value->profit,2),
-                "reason" => $value->reason ?? '',
+                "reason" => RojgaarPeLibrary::resolvePendingOrFailureReason($value),
                 "status" => '<span class="'. optional($value->status)->class.'">'. optional($value->status)->status.'</span>',
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges('.$value->id .')"><i class="fas fa-eye"></i> View</button>',
             );

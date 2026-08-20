@@ -90,7 +90,7 @@
                                     <th class="wd-15p border-bottom-0">Client Id</th>
                                     <th class="wd-15p border-bottom-0">Status</th>
                                     <th class="wd-15p border-bottom-0">Action</th>
-                                    <th class="wd-15p border-bottom-0">Failure Reason</th>
+                                    <th class="wd-15p border-bottom-0">Pending/Failure Reason</th>
                                     <th class="wd-15p border-bottom-0">Wallet</th>
 
                                 </tr>

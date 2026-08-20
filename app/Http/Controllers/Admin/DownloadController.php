@@ -205,13 +205,14 @@ class DownloadController extends Controller
                 ($value->wallet_type == 1) ? 'Payout' : 'Payin',
                 $aadhar_number,
                 $value->status->status,
+                $this->resolveFailureReason($value),
             );
             array_push($arr, $data);
         }
         $delimiter = ",";
         [$filename, $filepath, $path] = $this->prepareDownloadTarget($services->report_slug . '_' . $user_id . '_' . mt_rand(10, 99) . '.csv');
         $fp = fopen($filepath, 'w+');
-        $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Aadhar Number', 'Status'];
+        $col = ['Report Id', 'Date', 'User', 'Provider', 'Number', 'Txnid', 'Opening Balance', 'Amount', 'Profit', 'Closing Balance', 'Mode', 'Ip Address', 'Wallet', 'Aadhar Number', 'Status', 'Pending/Failure Reason'];
         fputcsv($fp, $col, $delimiter);
         foreach ($arr as $line) {
             fputcsv($fp, $line, $delimiter);
@@ -367,7 +368,7 @@ class DownloadController extends Controller
             'Mode',
             'Vendor',
             'UTR',
-            'Failure Reason',
+            'Pending/Failure Reason',
             'Wallet',
             'Client Id',
         ];
@@ -381,52 +382,7 @@ class DownloadController extends Controller
 
     private function resolveFailureReason(Report $report): string
     {
-        $reason = trim((string)$report->reason);
-        if ($reason !== '') {
-            return $this->maskInsufficientReason($reason);
-        }
-
-        if (in_array((int)$report->status_id, [1, 6], true)) {
-            return '';
-        }
-
-        if ((int)$report->status_id === 3) {
-            return RojgaarPeLibrary::pendingDisplayReason((int)$report->wallet_type);
-        }
-
-        $txnid = trim((string)$report->txnid);
-        if (in_array((int)$report->status_id, [2, 5], true)) {
-            if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
-                return $this->maskInsufficientReason($txnid);
-            }
-        }
-
-        $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
-        if (!$latestApi) {
-            $gatewayOrder = Gatewayorder::where('report_id', $report->id)
-                ->orWhere('id', $report->payid)
-                ->orWhere('client_id', $report->client_id)
-                ->orderBy('id', 'DESC')
-                ->first();
-            if ($gatewayOrder) {
-                $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
-            }
-        }
-
-        if ($latestApi) {
-            $apiMessage = trim(RojgaarPeLibrary::prettifyApiLogMessage($latestApi->message));
-            $responseType = (string)($latestApi->response_type ?? '');
-            if ($apiMessage !== '' && !RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType)) {
-                return $this->maskInsufficientReason($apiMessage);
-            }
-        }
-
-        return '';
-    }
-
-    private function maskInsufficientReason(string $reason): string
-    {
-        return \App\Library\LockHoldPayoutLibrary::merchantFacingFailureReason($reason);
+        return RojgaarPeLibrary::resolvePendingOrFailureReason($report);
     }
 
     function DownloadPendingReport($fromdate, $todate)

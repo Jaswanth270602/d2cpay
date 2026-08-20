@@ -10,6 +10,7 @@ use App\Report;
 use App\Provider;
 use \Crypt;
 use Auth;
+use App\Library\RojgaarPeLibrary;
 
 class AepsreportController extends Controller
 {
@@ -297,7 +298,7 @@ class AepsreportController extends Controller
         // Fetch records
 
         $records = Report::orderBy($columnName, $columnSortOrder)
-            ->select('id', 'created_at', 'provider_id', 'api_id', 'number', 'txnid', 'amount', 'profit', 'status_id', 'reason', 'wallet_type')
+            ->select('id', 'created_at', 'provider_id', 'api_id', 'number', 'txnid', 'amount', 'profit', 'status_id', 'reason', 'wallet_type', 'payid', 'client_id')
             ->where('number', 'like', '%' . $searchValue . '%')
             ->where('user_id', $user_id)
             ->whereDate('created_at', '>=', $fromdate)
@@ -319,7 +320,7 @@ class AepsreportController extends Controller
                 "txnid" => $value->txnid,
                 "amount" => number_format($value->amount, 2),
                 "profit" => number_format($value->profit, 2),
-                "reason" => $value->reason ?? '',
+                "reason" => RojgaarPeLibrary::resolvePendingOrFailureReason($value),
                 "status" => '<span class="' . optional($value->status)->class . '">' . optional($value->status)->status . '</span>',
                 "view" => '<button class="btn btn-danger btn-sm" onclick="view_recharges(' . $value->id . ')"><i class="fas fa-eye"></i> View</button>',
             );

@@ -157,62 +157,7 @@ class ReportController extends Controller
 
     private function resolveFailureReason(Report $report): string
     {
-        $reason = trim((string)$report->reason);
-        if ($reason !== '') {
-            return $this->maskInsufficientReason($reason);
-        }
-
-        if (in_array((int)$report->status_id, [1, 6], true)) {
-            return '';
-        }
-
-        if ((int)$report->status_id === 3) {
-            return RojgaarPeLibrary::pendingDisplayReason((int)$report->wallet_type);
-        }
-
-        $txnid = trim((string)$report->txnid);
-        if ((int)$report->status_id === 2 || (int)$report->status_id === 5) {
-            if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
-                return $this->maskInsufficientReason($txnid);
-            }
-        }
-
-        $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
-        if (!$latestApi) {
-            $gatewayOrder = Gatewayorder::where('report_id', $report->id)
-                ->orWhere('id', $report->payid)
-                ->orWhere('client_id', $report->client_id)
-                ->orderBy('id', 'DESC')
-                ->first();
-            if ($gatewayOrder) {
-                $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
-            }
-        }
-
-        if ($latestApi) {
-            $apiMessage = trim($this->prettifyApiPayload($latestApi->message));
-            if ($apiMessage !== '' && !$this->isPendingStatusPollNoise($latestApi, $apiMessage, (int)$report->status_id)) {
-                return $this->maskInsufficientReason($apiMessage);
-            }
-        }
-
-        return 'Failure reason not provided by provider.';
-    }
-
-    private function maskInsufficientReason(string $reason): string
-    {
-        return \App\Library\LockHoldPayoutLibrary::merchantFacingFailureReason($reason);
-    }
-
-    private function isPendingStatusPollNoise(?Apiresponse $apiRow, string $apiMessage, int $statusId): bool
-    {
-        if ($statusId !== 3) {
-            return false;
-        }
-
-        $responseType = $apiRow ? (string)$apiRow->response_type : null;
-
-        return RojgaarPeLibrary::isPayinStatusPollNoise($apiMessage, $responseType);
+        return RojgaarPeLibrary::resolvePendingOrFailureReason($report);
     }
 
     private function prettifyApiPayload($payload): string

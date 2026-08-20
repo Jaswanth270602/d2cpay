@@ -2,10 +2,12 @@
 
 namespace App\library {
 
-    use App\Models\Api;
-    use App\Models\Apiresponse;
-    use App\Models\Report;
-    use App\Library\RefundLibrary;
+        use App\Models\Api;
+        use App\Models\Apiresponse;
+        use App\Models\Gatewayorder;
+        use App\Models\Report;
+        use App\Library\LockHoldPayoutLibrary;
+        use App\Library\RefundLibrary;
     use Helpers;
     use Illuminate\Support\Facades\Cache;
 
@@ -529,6 +531,56 @@ namespace App\library {
             return $walletType === 1
                 ? self::pendingPayoutDisplayReason()
                 : self::pendingPayinDisplayReason();
+        }
+
+        public static function resolvePendingOrFailureReason($report): string
+        {
+            $reason = trim((string)($report->reason ?? ''));
+            if ($reason !== '') {
+                return LockHoldPayoutLibrary::merchantFacingFailureReason($reason);
+            }
+
+            $statusId = (int)($report->status_id ?? 0);
+            if (in_array($statusId, [1, 6], true)) {
+                return '';
+            }
+
+            if ($statusId === 3) {
+                return self::pendingDisplayReason((int)($report->wallet_type ?? 0));
+            }
+
+            $txnid = trim((string)($report->txnid ?? ''));
+            if (in_array($statusId, [2, 5], true)) {
+                if ($txnid !== '' && stripos($txnid, 'UTR') === false && !str_starts_with($txnid, '{')) {
+                    return LockHoldPayoutLibrary::merchantFacingFailureReason($txnid);
+                }
+            }
+
+            $latestApi = Apiresponse::where('report_id', $report->id)->orderBy('id', 'DESC')->first();
+            if (!$latestApi) {
+                $gatewayOrder = Gatewayorder::where('report_id', $report->id)
+                    ->orWhere('id', $report->payid ?? 0)
+                    ->orWhere('client_id', $report->client_id ?? '')
+                    ->orderBy('id', 'DESC')
+                    ->first();
+                if ($gatewayOrder) {
+                    $latestApi = Apiresponse::where('report_id', $gatewayOrder->id)->orderBy('id', 'DESC')->first();
+                }
+            }
+
+            if ($latestApi) {
+                $apiMessage = trim(self::prettifyApiLogMessage($latestApi->message));
+                $responseType = (string)($latestApi->response_type ?? '');
+                if ($apiMessage !== '' && ($statusId !== 3 || !self::isPayinStatusPollNoise($apiMessage, $responseType))) {
+                    return LockHoldPayoutLibrary::merchantFacingFailureReason($apiMessage);
+                }
+            }
+
+            if (in_array($statusId, [2, 5], true)) {
+                return 'Failure reason not provided by provider.';
+            }
+
+            return '';
         }
 
         public function getPayinStatus(string $merchantRef, ?int $gatewayOrderId = null): array
