@@ -148,7 +148,7 @@
                                     <th class="wd-15p border-bottom-0">Vendor</th>
                                     <th class="wd-15p border-bottom-0">UTR</th>
                                     <th class="wd-15p border-bottom-0">Action</th>
-                                    <th class="wd-15p border-bottom-0">Pending/Failure Reason</th>
+                                    <th class="wd-15p border-bottom-0">Pending / Failure Reason</th>
                                     <th class="wd-15p border-bottom-0">Wallet</th>
                                     <th class="wd-15p border-bottom-0">client id</th>
                                 </tr>
@@ -180,7 +180,7 @@
                                             { data: 'vendor' },
                                             { data: 'txnid' },
                                             { data: 'view' },
-                                            { data: 'failure_reason' },
+                                            { data: 'failure_reason', title: 'Pending / Failure Reason' },
                                             { data: 'wallet_type' },
                                             { data: 'client_id' },
                                         ]
