@@ -523,7 +523,7 @@ namespace App\library {
 
         public static function pendingPayoutDisplayReason(): string
         {
-            return 'Awaiting payout confirmation';
+            return 'Pending at beneficiary bank';
         }
 
         public static function pendingDisplayReason(int $walletType): string
